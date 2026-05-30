@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bi8asvhqbr66a"
-path="res://.godot/imported/compensation_power_big.png-66d5722f23fdd0da8045897645213da4.ctex"
+uid="uid://d3l4ripih33mt"
+path="res://.godot/imported/InvestCard.png-1ab2cf2e1f52ca2104888685ed6abef6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ZZZMod/images/powers/compensation_power_big.png"
-dest_files=["res://.godot/imported/compensation_power_big.png-66d5722f23fdd0da8045897645213da4.ctex"]
+source_file="res://ZZZMod/images/cards/InvestCard.png"
+dest_files=["res://.godot/imported/InvestCard.png-1ab2cf2e1f52ca2104888685ed6abef6.ctex"]
 
 [params]
 
