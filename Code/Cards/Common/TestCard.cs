@@ -2,14 +2,14 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
-using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.ValueProps;
 using STS2RitsuLib.Interop.AutoRegistration;
 using STS2RitsuLib.Keywords;
+using ZZZMod.Code.Pools;
 
 namespace ZZZMod.Code.Cards.Common;
 
-[RegisterCard(typeof(ColorlessCardPool))]
+[RegisterCard(typeof(ZZZCardPool))]
 // [RegisterCharacterStarterCard(typeof(TestCharacter), 5)]
 public class TestCard() : ZZZBaseCard(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy, true)
 {
@@ -32,10 +32,10 @@ public class TestCard() : ZZZBaseCard(1, CardType.Attack, CardRarity.Common, Tar
             await DealDamage(choiceContext, DynamicVars["BonusDamage"], t);
     }
 
-    protected override void OnUpgrade() 
+    protected override void OnUpgrade()
     {
         DynamicVars.Damage.UpgradeValueBy(4);
         DynamicVars["BonusDamage"].UpgradeValueBy(2m);
     }
-    
+
 }

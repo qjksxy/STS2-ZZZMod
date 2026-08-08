@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://test_icon_scene"]
+
+[ext_resource type="Texture2D" path="res://ZZZMod/images/character/character_icon.png" id="1_icon"]
+
+[node name="TestIcon" type="Node2D"]
+
+[node name="Icon" type="Sprite2D" parent="."]
+texture = ExtResource("1_icon")

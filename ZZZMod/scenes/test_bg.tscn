@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://cejqjeipgqe0n"]
 
-[ext_resource type="Texture2D" uid="uid://hn2nofekpwrp" path="res://icon.svg" id="1_c8lhi"]
+[ext_resource type="Texture2D" uid="uid://d3pfnneqjq03b" path="res://icon.svg" id="1_c8lhi"]
 
 [node name="TestBg" type="Control"]
 layout_mode = 3
@@ -36,6 +36,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 383.0
+offset_top = 217.0
+offset_right = 383.0
+offset_bottom = 217.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.44705883, 0.49803922, 1, 1)
@@ -45,10 +49,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -28.0
-offset_top = 67.0
-offset_right = 612.0
-offset_bottom = 189.0
+offset_left = 1362.0
+offset_top = 405.0
+offset_right = 299.56104
+offset_bottom = 105.04883
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.82, 0.82)

@@ -43,18 +43,18 @@ public class ZZZCharacter : ModCharacterTemplate<ZZZCardPool, ZZZRelicPool, ZZZP
             Ui: new(
                 // 人物头像路径。
                 IconTexturePath: "res://ZZZMod/images/character/character_icon.png",
-                // 人物头像2号。
-                // IconPath: "res://scenes/ui/character_icons/ironclad_icon.tscn",
+                // 游戏左上角头像、角色统计页头像、每日挑战角色头像。这个是场景而不是图片。
+                IconPath: "res://ZZZMod/scenes/test_icon.tscn",
                 // 人物选择背景。
                 CharacterSelectBgPath: "res://ZZZMod/scenes/test_bg.tscn",
                 // 人物选择图标。
                 CharacterSelectIconPath: "res://ZZZMod/images/character/character_select.png",
                 // 人物选择图标-锁定状态。
-                CharacterSelectLockedIconPath: "res://ZZZMod/images/character/character_select_locked.png"
+                CharacterSelectLockedIconPath: "res://ZZZMod/images/character/character_select_locked.png",
                 // 人物选择过渡动画。
                 // CharacterSelectTransitionPath: "res://materials/transitions/ironclad_transition_mat.tres",
                 // 地图上的角色标记图标、表情轮盘上的角色头像
-                // MapMarkerPath: null
+                MapMarkerPath: "res://icon.svg"
             ),
             Vfx: new(
                 // 卡牌拖尾场景。

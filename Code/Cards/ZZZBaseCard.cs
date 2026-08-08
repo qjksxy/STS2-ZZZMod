@@ -56,12 +56,11 @@ public abstract class ZZZBaseCard : ModCardTemplate
     protected virtual IEnumerable<string> BaseKeywordIds => [];
     protected virtual IEnumerable<string> OwnKeywordIds => [];
 
-    protected sealed override IEnumerable<string> RegisteredKeywordIds =>
-        BaseKeywordIds.Concat(OwnKeywordIds);
+    private IEnumerable<string> AllKeywordIds => BaseKeywordIds.Concat(OwnKeywordIds);
 
     // 通用关键词条件判定
     protected bool HasKeyword(string qualifiedKeywordId) =>
-        RegisteredKeywordIds.Contains(qualifiedKeywordId);
+        AllKeywordIds.Contains(qualifiedKeywordId);
 
     protected virtual bool IsOverflowActive
     {
@@ -74,7 +73,10 @@ public abstract class ZZZBaseCard : ModCardTemplate
 
     protected virtual bool OwnShouldGlowGold => false;
 
-    protected sealed override bool ShouldGlowGoldInternal =>
+    // Note: ShouldGlowGold is not virtual in the base class.
+    // Use ModCardHandGlowRegistry to register glow conditions instead.
+    // This property is kept for reference but cannot override the base.
+    private bool CustomShouldGlowGold =>
         (HasKeyword(ZZZModKeywords.Overflow) && IsOverflowActive) || OwnShouldGlowGold;
 
     /// <summary>满盈是否触发。各卡牌在 OnPlay 中自行定义效果。</summary>
@@ -82,12 +84,12 @@ public abstract class ZZZBaseCard : ModCardTemplate
         HasKeyword(ZZZModKeywords.Overflow) && IsOverflowActive;
 
     /// <summary>对单体目标造成伤害。</summary>
-    protected async Task DealDamage(PlayerChoiceContext choiceContext, DynamicVar damageVar, Creature? target,
+    protected async Task DealDamage(PlayerChoiceContext choiceContext, DynamicVar damageVar, Creature? target, CardPlay? cardPlay = null,
         string hitFx = "vfx/vfx_attack_slash")
     {
         if (target == null) return;
         await DamageCmd.Attack(damageVar.BaseValue)
-            .FromCard(this).Targeting(target).WithHitFx(hitFx).Execute(choiceContext);
+            .FromCard(this, cardPlay).Targeting(target).WithHitFx(hitFx).Execute(choiceContext);
     }
 
     /// <summary>对全体敌人造成伤害。</summary>
@@ -100,11 +102,11 @@ public abstract class ZZZBaseCard : ModCardTemplate
 
     /// <summary>以固定数值对单体造成伤害。</summary>
     protected async Task DealDamageRaw(PlayerChoiceContext choiceContext, decimal amount, Creature? target,
-        string hitFx = "vfx/vfx_attack_slash")
+        CardPlay? cardPlay = null, string hitFx = "vfx/vfx_attack_slash")
     {
         if (target == null) return;
         await DamageCmd.Attack(amount)
-            .FromCard(this).Targeting(target).WithHitFx(hitFx).Execute(choiceContext);
+            .FromCard(this, cardPlay).Targeting(target).WithHitFx(hitFx).Execute(choiceContext);
     }
 
     /// <summary>以固定数值为自己获得格挡。</summary>
@@ -115,26 +117,26 @@ public abstract class ZZZBaseCard : ModCardTemplate
     }
 
     /// <summary>为自己施加能力。</summary>
-    protected async Task ApplyPowerSelf<T>(int amount) where T : PowerModel, new()
+    protected async Task ApplyPowerSelf<T>(PlayerChoiceContext choiceContext, int amount, CardModel? cardModel = null) where T : PowerModel, new()
     {
-        await PowerCmd.Apply<T>(Owner.Creature, amount, Owner.Creature, this);
+        await PowerCmd.Apply<T>(choiceContext, Owner.Creature, amount, Owner.Creature, cardModel);
     }
 
     /// <summary>为指定目标施加能力。</summary>
-    protected async Task ApplyPowerTo<T>(Creature? target, int amount)
+    protected async Task ApplyPowerTo<T>(PlayerChoiceContext choiceContext, Creature? target, int amount, CardModel? cardModel = null)
         where T : PowerModel, new()
     {
         if (target == null) return;
-        await PowerCmd.Apply<T>(target, amount, Owner.Creature, this);
+        await PowerCmd.Apply<T>(choiceContext, target, amount, Owner.Creature, cardModel);
     }
 
     /// <summary>修改已有能力的层数（正值增加，负值减少）。</summary>
-    protected async Task ModifyPower<T>(Creature? target, int delta) where T : PowerModel
+    protected async Task ModifyPower<T>(PlayerChoiceContext choiceContext, Creature? target, int delta, CardModel? cardModel = null) where T : PowerModel
     {
         if (target == null) return;
         var power = target.GetPower<T>();
         if (power == null) return;
-        await PowerCmd.ModifyAmount(power, delta, Owner.Creature, this);
+        await PowerCmd.ModifyAmount(choiceContext, power, delta, Owner.Creature, cardModel);
     }
 
     /// <summary>抽牌。</summary>

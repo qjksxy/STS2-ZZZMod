@@ -34,14 +34,14 @@ public sealed class TestEvent : ModEventTemplate
     // 事件开始前的逻辑。这里是禁止玩家移除药水
     protected override Task BeforeEventStarted(bool isPreFinished)
     {
-        Owner!.CanRemovePotions = false;
+        // Owner!.CanRemovePotions = false; // Not available in current API version
         return Task.CompletedTask;
     }
 
     // 事件结束后的逻辑。这里是允许玩家移除药水
     protected override void OnEventFinished()
     {
-        Owner!.CanRemovePotions = true;
+        // Owner!.CanRemovePotions = true; // Not available in current API version
     }
 
     // 生成事件初始选项。这里是两个选项：失去生命值或者失去金币，然后进入选择奖励阶段
