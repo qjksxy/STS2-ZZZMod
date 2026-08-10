@@ -2,6 +2,6 @@
     "ZZZ_MOD_POWER_COMPENSATION_POWER.title": "代偿",
     "ZZZ_MOD_POWER_COMPENSATION_POWER.description": "造成伤害时减少相应层数，回合结束时受到剩余层数的伤害。",
     "ZZZ_MOD_POWER_INVEST_POWER.title": "投资",
-    "ZZZ_MOD_POWER_INVEST_POWER.description": "每回合结束时，获得1层力量和1层虚弱。",
+    "ZZZ_MOD_POWER_INVEST_POWER.description": "每回合结束时，获得{Amount}层力量和{Amount}层虚弱。",
     "ZZZ_MOD_POWER_INVEST_POWER.smartDescription": "每回合结束时，获得[blue]{Amount}[/blue]层力量和[blue]{Amount}[/blue]层虚弱。"
 }
