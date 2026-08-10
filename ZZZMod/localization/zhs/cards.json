@@ -1,4 +1,8 @@
 {
+    "ZZZ_MOD_CARD_ZZZ_STRIKE.title": "打击",
+    "ZZZ_MOD_CARD_ZZZ_STRIKE.description": "造成{Damage:diff()}点伤害。",
+    "ZZZ_MOD_CARD_ZZZ_DEFEND.title": "防御",
+    "ZZZ_MOD_CARD_ZZZ_DEFEND.description": "获得{Block:diff()}点格挡。",
     "ZZZ_MOD_CARD_TEST_CARD.title": "测试卡牌",
     "ZZZ_MOD_CARD_TEST_CARD.description": "造成{Damage:diff()}点伤害。[gold]满盈[/gold] ：满血时额外造成{BonusDamage:diff()}点伤害。",
     "ZZZ_MOD_CARD_PRESSURE_YOU.title": "压力着你",

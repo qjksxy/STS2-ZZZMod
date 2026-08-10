@@ -1,0 +1,17 @@
+{
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.aromaPrinciple": "[sine][blue]……等待……[/blue][/sine]",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.banter.alive.endTurnPing": "……",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.banter.dead.endTurnPing": "……",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.cardsModifierDescription": "法厄同的卡牌现在会出现在奖励和商店中。",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.cardsModifierTitle": "法厄同卡牌",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.description": "一个在无尽等待中的存在。\n时间对[gold]法厄同[/gold]而言，不过是另一种形式的永恒。",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.eventDeathPrevention": "我还得继续等下去……",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.goldMonologue": "[sine]这些金币……也许能派上用场……[/sine]",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.possessiveAdjective": "他的",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.pronounObject": "他",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.pronounPossessive": "他的",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.pronounSubject": "他",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.title": "法厄同",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.titleObject": "法厄同",
+  "ZZZ_MOD_CHARACTER_ZZZ_CHARACTER.unlockText": "用[pink]{Prerequisite}[/pink]进行一局游戏来解锁这个角色。"
+}

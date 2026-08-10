@@ -17,16 +17,16 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
-using MegaCrit.Sts2.Core.Models.CardPools;
 using STS2RitsuLib.Interop.AutoRegistration;
+using ZZZMod.Code.Pools;
 
 namespace ZZZMod.Code.Cards.Rare;
 
-[RegisterCard(typeof(ColorlessCardPool))]
+[RegisterCard(typeof(ZZZCardPool))]
 public class YourCard() : ZZZBaseCard(
     2,                    // 费用
     CardType.Skill,       // 类型：Attack / Skill / Power
-    CardRarity.Rare,      // 稀有度：Common / Uncommon / Rare
+    CardRarity.Rare,      // 稀有度：Basic / Common / Uncommon / Rare
     TargetType.Self,      // 目标：Self / AnyEnemy / AnyAlly
     true                  // 是否显示在图鉴中
 )
@@ -45,7 +45,7 @@ public class YourCard() : ZZZBaseCard(
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         var amount = DynamicVars["InvestAmount"].IntValue;
-        await ApplyPowerSelf<InvestPower>(amount);
+        await ApplyPowerSelf<InvestPower>(choiceContext, amount, cardPlay.Card);
     }
 
     // ── 升级效果 ──
@@ -59,7 +59,7 @@ public class YourCard() : ZZZBaseCard(
 **关键点：**
 
 - 必须加 `[RegisterCard(typeof(XXXPool))]`，通过 `ModTypeDiscoveryHub` 自动注册。
-- 卡池选择：`ColorlessCardPool`（无色通用），角色专属池需自定义。
+- 卡池选择：角色专属池需自定义（如 `ZZZCardPool`），不要使用 `ColorlessCardPool`（无色池无法生成角色奖励）。
 - 基类 `ZZZBaseCard` 自动处理卡图路径：`res://ZZZMod/images/cards/{ClassName}.png`。
 
 ---
@@ -71,6 +71,7 @@ public class YourCard() : ZZZBaseCard(
 ```csharp
 protected override IEnumerable<DynamicVar> CanonicalVars => [
     new DamageVar(12, ValueProp.Move),       // 伤害变量（含伤害属性）
+    new BlockVar(5, ValueProp.Move),         // 格挡变量（含格挡属性）
     new DynamicVar("BonusDamage", 4m),       // 普通数值变量
     new DynamicVar("InvestAmount", 1m)       // 自定义命名变量
 ];
@@ -80,6 +81,7 @@ protected override IEnumerable<DynamicVar> CanonicalVars => [
 
 ```csharp
 var dmg = DynamicVars.Damage;               // 内置 Damage 变量
+var block = DynamicVars.Block;              // 内置 Block 变量
 var amount = DynamicVars["InvestAmount"].IntValue;  // 自定义变量
 ```
 
@@ -87,6 +89,7 @@ var amount = DynamicVars["InvestAmount"].IntValue;  // 自定义变量
 
 ```csharp
 DynamicVars.Damage.UpgradeValueBy(4);              // 伤害 +4
+DynamicVars.Block.UpgradeValueBy(3);               // 格挡 +3
 DynamicVars["InvestAmount"].UpgradeValueBy(1m);    // 自定义变量 +1
 EnergyCost.UpgradeBy(-1);                          // 降 1 费
 AddKeyword(CardKeyword.Innate);                    // 添加固有关键词
@@ -137,14 +140,19 @@ public class ZZZModKeywords
 
 ### 1.4 ZZZBaseCard 常用辅助方法
 
-| 方法 | 用途 |
-|------|------|
-| `ApplyPowerSelf<T>(amount)` | 为自己施加能力 |
-| `ApplyPowerTo<T>(target, amount)` | 为目标施加能力 |
-| `DealDamage(context, damageVar, target)` | 对单体造成伤害 |
-| `GainBlockRaw(amount)` | 为自己获得格挡 |
-| `GainEnergy(amount)` | 获得能量 |
-| `ShouldTriggerOverflow()` | 满盈关键词条件判定 |
+| 方法 | 签名 | 用途 |
+|------|------|------|
+| `ApplyPowerSelf<T>` | `(PlayerChoiceContext, int, CardModel?)` | 为自己施加能力 |
+| `ApplyPowerTo<T>` | `(PlayerChoiceContext, Creature?, int, CardModel?)` | 为目标施加能力 |
+| `DealDamage` | `(PlayerChoiceContext, DynamicVar, Creature?, CardPlay?, string)` | 对单体造成伤害 |
+| `DealDamageRaw` | `(PlayerChoiceContext, decimal, Creature?, CardPlay?, string)` | 以固定数值造成伤害 |
+| `GainBlockRaw` | `(decimal, CardPlay?)` | 为自己获得格挡 |
+| `GainEnergy` | `(int)` | 获得能量 |
+| `ModifyPower<T>` | `(PlayerChoiceContext, Creature?, int, CardModel?)` | 修改能力层数 |
+| `HasPower<T>` | `()` | 检查是否拥有指定能力 |
+| `GetPowerAmount<T>` | `()` | 获取能力层数 |
+| `EnsureTarget` | `(CardPlay, out Creature)` | 安全检查目标非空 |
+| `ShouldTriggerOverflow` | `()` | 满盈关键词条件判定 |
 
 ---
 
@@ -201,4 +209,4 @@ dotnet build -t:ExportPck
 | `OnPlay` | 卡牌打出逻辑 | `choiceContext`, `cardPlay` |
 | `OnUpgrade` | 升级效果 | `EnergyCost.UpgradeBy(-1)` |
 | `CanonicalKeywords` | 游戏内建关键词 | `CardKeyword.Exhaust`, `CardKeyword.Innate` |
-| `ShouldGlowGold` | 手牌金色高亮条件 | `bool` |
+| `ShouldGlowGold` | 手牌金色高亮条件 | `bool`（需通过 `ModCardHandGlowRegistry` 注册） |

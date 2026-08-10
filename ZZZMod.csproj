@@ -25,7 +25,7 @@
     </Reference>
 
     <Reference Include="STS2-RitsuLib">
-      <HintPath>$(Sts2Dir)\mods\STS2.RitsuLib.Compat.0.103.2.0.2.29.github\STS2-RitsuLib.dll</HintPath>
+      <HintPath>$(Sts2Dir)\mods\STS2.RitsuLib.0.5.10.github\STS2-RitsuLib.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
