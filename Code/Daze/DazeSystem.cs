@@ -16,7 +16,7 @@ public static class DazeSystem
     /// </summary>
     public static int CalcMaxDaze(Creature creature)
     {
-        return Math.Max(4, creature.MaxHp / 8);
+        return Math.Max(4, creature.MaxHp / 12);
     }
 
     public static void Init()

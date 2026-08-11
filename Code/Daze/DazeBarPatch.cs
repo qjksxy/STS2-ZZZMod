@@ -24,7 +24,6 @@ internal sealed class DazeBarPatch : IPatchMethod
     private const float BarHeight = 8f;
     private const float BarVerticalOffset = 32f;
     private const float TextVerticalOffset = 28f;
-    private const float TweenDuration = 0.35f;
 
     private static readonly Color DazeFillColor = new("FFD700");
     private static readonly Color DazeFullColor = new("FF4444");
@@ -75,24 +74,12 @@ internal sealed class DazeBarPatch : IPatchMethod
         bg.SetSize(new Vector2(barWidth, BarHeight), false);
         bg.Visible = true;
 
-        // 填充条（scale:x 缩放动画）
+        // 填充条：直接调整宽度（保持圆角不变形），外层 bg 做裁剪
         fill.SetPosition(new Vector2(0f, barY), false);
-        fill.SetSize(new Vector2(barWidth, BarHeight), false);
+        fill.SetSize(new Vector2(barWidth * ratio, BarHeight), false);
         fill.Visible = true;
 
-        if (fill.HasMeta("Tween"))
-        {
-            var oldTween = fill.GetMeta("Tween").As<Tween>();
-            if (oldTween != null && oldTween.IsValid())
-                oldTween.Kill();
-        }
-
-        var tween = fill.CreateTween();
-        tween.TweenProperty(fill, "scale:x", ratio, TweenDuration)
-            .SetEase(Tween.EaseType.Out);
-        fill.SetMeta("Tween", tween);
-
-        // 颜色：失衡中 → 紫色，归零待触发 → 红色，正常 → 黄色
+        // 颜色：每次创建新 StyleBox 并覆盖（GetThemeStylebox 返回副本，不能直接改）
         Color fillColor;
         if (daze.IsDazed)
             fillColor = new Color("9933FF"); // 紫色：正在失衡
@@ -101,8 +88,12 @@ internal sealed class DazeBarPatch : IPatchMethod
         else
             fillColor = DazeFillColor;       // 黄色：正常倒计时
 
-        if (fill.GetThemeStylebox("panel") is StyleBoxFlat fillStyle)
-            fillStyle.BgColor = fillColor;
+        fill.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+        {
+            BgColor = fillColor,
+            CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4,
+            CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4,
+        });
 
         // 文字标签
         label.SetPosition(new Vector2(0f, barY - TextVerticalOffset), false);
