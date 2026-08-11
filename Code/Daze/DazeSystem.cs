@@ -1,23 +1,28 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using STS2RitsuLib;
 
 namespace ZZZMod.Code.Daze;
 
 /// <summary>
-///     失衡系统核心入口。负责生命周期订阅和补丁注册。
+///     失衡系统核心入口。
 /// </summary>
 public static class DazeSystem
 {
-    public const int DefaultMaxDaze = 6;
+    /// <summary>
+    ///     计算怪物的失衡条上限：maxHP / 8，最低 4。
+    /// </summary>
+    public static int CalcMaxDaze(Creature creature)
+    {
+        return Math.Max(4, creature.MaxHp / 8);
+    }
 
     public static void Init()
     {
-        // 生命周期：战斗开始/结束时清空失衡状态
         RitsuLibFramework.SubscribeLifecycle<CombatStartingEvent>(_ => DazeStore.ClearAll());
         RitsuLibFramework.SubscribeLifecycle<CombatEndedEvent>(_ => DazeStore.ClearAll());
-
-        // 生命周期：敌方回合开始时触发失衡效果
         RitsuLibFramework.SubscribeLifecycle<SideTurnStartingEvent>(OnSideTurnStarting);
     }
 
@@ -33,14 +38,21 @@ public static class DazeSystem
             if (!creature.IsAlive) continue;
             if (!DazeStore.TryGet(creature, out var daze)) continue;
 
-            daze.TickTurnStart();
+            var action = daze.TickTurnStart();
 
-            if (daze.IsDazed)
+            switch (action)
             {
-                if (creature.Monster?.NextMove != null)
-                    await CreatureCmd.Stun(creature, creature.Monster.NextMove.Id);
-                daze.IsDazed = false;
-                Entry.Logger.Debug($"[Daze] {creature} 进入失衡状态");
+                case DazeTurnAction.ApplyDebuff:
+                    await PowerCmd.Apply<DazePower>(new ThrowingPlayerChoiceContext(), creature, 1, creature, null);
+                    Entry.Logger.Debug($"[Daze] {creature} 进入失衡状态（受伤 +50%）");
+                    break;
+
+                case DazeTurnAction.RemoveDebuff:
+                    var existing = creature.GetPower<DazePower>();
+                    if (existing != null)
+                        await PowerCmd.Remove(existing);
+                    Entry.Logger.Debug($"[Daze] {creature} 恢复，失衡条重置");
+                    break;
             }
         }
     }

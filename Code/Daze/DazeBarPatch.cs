@@ -22,8 +22,8 @@ internal sealed class DazeBarPatch : IPatchMethod
     public static bool IsCritical => false;
 
     private const float BarHeight = 8f;
-    private const float BarVerticalOffset = 26f;
-    private const float TextVerticalOffset = 24f;
+    private const float BarVerticalOffset = 32f;
+    private const float TextVerticalOffset = 28f;
     private const float TweenDuration = 0.35f;
 
     private static readonly Color DazeFillColor = new("FFD700");
@@ -50,7 +50,7 @@ internal sealed class DazeBarPatch : IPatchMethod
             return;
         }
 
-        if (!creature.IsAlive)
+        if (!creature.IsAlive || creature.Side != CombatSide.Enemy)
         {
             HideAll(__instance);
             return;
@@ -92,9 +92,17 @@ internal sealed class DazeBarPatch : IPatchMethod
             .SetEase(Tween.EaseType.Out);
         fill.SetMeta("Tween", tween);
 
-        // 归零时变红
+        // 颜色：失衡中 → 紫色，归零待触发 → 红色，正常 → 黄色
+        Color fillColor;
+        if (daze.IsDazed)
+            fillColor = new Color("9933FF"); // 紫色：正在失衡
+        else if (daze.IsEmpty)
+            fillColor = DazeFullColor;       // 红色：即将失衡
+        else
+            fillColor = DazeFillColor;       // 黄色：正常倒计时
+
         if (fill.GetThemeStylebox("panel") is StyleBoxFlat fillStyle)
-            fillStyle.BgColor = daze.IsEmpty ? DazeFullColor : DazeFillColor;
+            fillStyle.BgColor = fillColor;
 
         // 文字标签
         label.SetPosition(new Vector2(0f, barY - TextVerticalOffset), false);
@@ -144,7 +152,7 @@ internal sealed class DazeBarPatch : IPatchMethod
         label.AddThemeColorOverride("font_color", new Color("FFFFAA"));
         label.AddThemeColorOverride("font_outline_color", new Color("1A1A00"));
         label.AddThemeConstantOverride("outline_size", 4);
-        label.AddThemeFontSizeOverride("font_size", 16);
+        label.AddThemeFontSizeOverride("font_size", 20);
         return label;
     }
 

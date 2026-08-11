@@ -9,15 +9,21 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
 using STS2RitsuLib.Interop.AutoRegistration;
 using STS2RitsuLib.Scaffolding.Content;
+using ZZZMod.Code.Daze;
 
 namespace ZZZMod.Code.Cards;
 
-public abstract class ZZZBaseCard : ModCardTemplate
+public abstract class ZZZBaseCard : ModCardTemplate, IDazeCardSource
 {
     protected ZZZBaseCard(int cost, CardType type, CardRarity rarity, TargetType target, bool showInCardLibrary = true)
         : base(cost, type, rarity, target, showInCardLibrary)
     {
     }
+
+    /// <summary>
+    ///     每次攻击命中的失衡值，默认 1。子类可重写自定义。
+    /// </summary>
+    public virtual int DazeAmount => 1;
 
     public override CardAssetProfile AssetProfile => new(
         PortraitPath: $"res://ZZZMod/images/cards/{GetType().Name}.png"
