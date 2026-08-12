@@ -5,6 +5,7 @@
 /android/
 *.uid
 *.import
+*.translation
 project.private.godot
 *.crash
 

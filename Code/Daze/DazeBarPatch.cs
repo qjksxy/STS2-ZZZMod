@@ -74,19 +74,29 @@ internal sealed class DazeBarPatch : IPatchMethod
         bg.SetSize(new Vector2(barWidth, BarHeight), false);
         bg.Visible = true;
 
-        // 填充条：直接调整宽度（保持圆角不变形），外层 bg 做裁剪
-        fill.SetPosition(new Vector2(0f, barY), false);
-        fill.SetSize(new Vector2(barWidth * ratio, BarHeight), false);
-        fill.Visible = true;
-
         // 颜色：每次创建新 StyleBox 并覆盖（GetThemeStylebox 返回副本，不能直接改）
         Color fillColor;
+        float fillWidth;
         if (daze.IsDazed)
+        {
             fillColor = new Color("9933FF"); // 紫色：正在失衡
+            fillWidth = barWidth;            // 满条紫色，明确标识失衡状态
+        }
         else if (daze.IsEmpty)
+        {
             fillColor = DazeFullColor;       // 红色：即将失衡
+            fillWidth = 0;                   // 空条，等待触发
+        }
         else
+        {
             fillColor = DazeFillColor;       // 黄色：正常倒计时
+            fillWidth = barWidth * ratio;
+        }
+
+        // 填充条：直接调整宽度（保持圆角不变形）
+        fill.SetPosition(new Vector2(0f, barY), false);
+        fill.SetSize(new Vector2(fillWidth, BarHeight), false);
+        fill.Visible = true;
 
         fill.AddThemeStyleboxOverride("panel", new StyleBoxFlat
         {
