@@ -34,7 +34,7 @@ public sealed class TimeBarrierPower : ModPowerTemplate
         if (dealer == null || dealer.Side != CombatSide.Enemy || !dealer.IsAlive) return;
         if (target != Owner) return;
 
-        DazeStore.Get(dealer).ReduceDaze(1);
+        DazeStore.Get(dealer).AddDaze(1);
     }
 
     // 回合结束时自动移除（仅本回合有效）

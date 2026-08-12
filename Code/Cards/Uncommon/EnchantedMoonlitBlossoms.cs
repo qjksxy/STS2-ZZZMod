@@ -36,10 +36,10 @@ public sealed class EnchantedMoonlitBlossoms()
         // 手动施加失衡（Magic 点）
         var magic = DynamicVars["Magic"].IntValue;
         var daze = DazeStore.Get(target);
-        var reachedZero = daze.ReduceDaze(magic);
+        var reachedMax = daze.AddDaze(magic);
 
-        // 若此卡使失衡值降至0，施加失衡易伤（可被人工作品抵消）
-        if (reachedZero)
+        // 若此卡使失衡值达到上限，施加失衡易伤（可被人工作品抵消）
+        if (reachedMax)
             await PowerCmd.Apply<DazeVulnerablePower>(choiceContext, target, 1, Owner.Creature, cardPlay.Card);
     }
 

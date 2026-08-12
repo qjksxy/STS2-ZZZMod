@@ -44,7 +44,7 @@ public sealed class EightSoundsOfGanzhou()
         foreach (var enemy in combatState.Enemies)
         {
             if (!enemy.IsAlive) continue;
-            DazeStore.Get(enemy).ReduceDaze(magic);
+            DazeStore.Get(enemy).AddDaze(magic);
         }
     }
 

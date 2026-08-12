@@ -7,8 +7,8 @@ using STS2RitsuLib.Models;
 namespace ZZZMod.Code.Daze;
 
 /// <summary>
-///     攻击命中钩子：每次攻击减少怪物失衡值。
-///     默认 -1，特定卡牌可通过 IDazeCardSource.DazeAmount 自定义。
+///     攻击命中钩子：每次攻击增加怪物失衡值。
+///     默认 +1，特定卡牌可通过 IDazeCardSource.DazeAmount 自定义。
 /// </summary>
 [RegisterSingleton]
 public sealed class DazeHitListener : HookedSingletonModel, IAttackHitHookListener
@@ -17,7 +17,6 @@ public sealed class DazeHitListener : HookedSingletonModel, IAttackHitHookListen
 
     public Task AfterAttackHit(AttackHitContext context)
     {
-        // 读取卡牌的自定义失衡值（默认 1）
         var dazeAmount = 1;
         if (context.CardSource is IDazeCardSource dazeCard)
             dazeAmount = dazeCard.DazeAmount;
@@ -29,16 +28,13 @@ public sealed class DazeHitListener : HookedSingletonModel, IAttackHitHookListen
             if (target.Side != CombatSide.Enemy) continue;
             if (!target.IsAlive) continue;
 
-            DazeStore.Get(target).ReduceDaze(dazeAmount);
+            DazeStore.Get(target).AddDaze(dazeAmount);
         }
 
         return Task.CompletedTask;
     }
 }
 
-/// <summary>
-///     实现此接口的攻击牌可自定义每次命中的失衡值。
-/// </summary>
 public interface IDazeCardSource
 {
     int DazeAmount { get; }
