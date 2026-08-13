@@ -8,7 +8,7 @@ using ZZZMod.Code.Pools;
 namespace ZZZMod.Code.Cards.Rare;
 
 /// <summary>
-///     时光碎裂 —— 2费技能，直接将目标失衡值归零，立即触发失衡。
+///     时光碎裂 —— 2费技能，对目标造成999点失衡。
 /// </summary>
 [RegisterCard(typeof(ZZZCardPool))]
 public sealed class ShatterTime() : ZZZBaseCard(2, CardType.Skill, CardRarity.Rare, TargetType.AnyEnemy, true)
@@ -16,10 +16,7 @@ public sealed class ShatterTime() : ZZZBaseCard(2, CardType.Skill, CardRarity.Ra
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         if (!EnsureTarget(cardPlay, out var target)) return;
-
-        var daze = DazeStore.Get(target);
-        daze.CurrentValue = 0;
-        daze.PendingDaze = true;
+        DazeStore.Get(target).AddDaze(999);
     }
 
     protected override void OnUpgrade()
