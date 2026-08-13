@@ -1,0 +1,6 @@
+{
+    "ZZZ_MOD_CARD_ENCHANTED_MOONLIT_BLOSSOMS.title": "醉花月云转",
+    "ZZZ_MOD_CARD_ENCHANTED_MOONLIT_BLOSSOMS.description": "对敌人造成{Damage:diff()}点伤害，并造成{Magic:diff()}点失衡。若此卡使敌人失衡值降至0，则使敌人下回合进入失衡状态时，失衡易伤倍率额外提升50%。",
+    "ZZZ_MOD_CARD_EIGHT_SOUNDS_OF_GANZHOU.title": "八声甘州",
+    "ZZZ_MOD_CARD_EIGHT_SOUNDS_OF_GANZHOU.description": "对敌方全体造成{Damage:diff()}点伤害，并造成{Magic:diff()}点失衡。"
+}

@@ -5,14 +5,15 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using STS2RitsuLib.Patching.Models;
+using STS2RitsuLib.Utils;
 
 namespace ZZZMod.Code.Daze;
 
 /// <summary>
-///     失衡条 UI：参考 firefly_mod 的 NToughness_Patch 实现。
-///     补丁 NHealthBar.RefreshValues，在 _hpForegroundContainer 下添加失衡条子节点。
-///     填充通过 scale:x 缩放实现，位置使用本地坐标。
-///     使用 Panel + StyleBoxFlat 绘制（无纹理依赖）。
+///     失衡条 UI：分段式正向计数 + 动画效果。
+///     - 分段点亮时从白色展开
+///     - 进入失衡状态时分段逐渐变为紫色
+///     - 始终显示边框和文字，即使失衡值为 0
 /// </summary>
 [HarmonyPriority(Priority.Last)]
 internal sealed class DazeBarPatch : IPatchMethod
@@ -21,19 +22,33 @@ internal sealed class DazeBarPatch : IPatchMethod
     public static string Description => "Daze bar on monster health bars";
     public static bool IsCritical => false;
 
-    private const float BarHeight = 8f;
-    private const float BarVerticalOffset = 32f;
-    private const float TextVerticalOffset = 28f;
+    private const float BarHeight = 10f;
+    private const float BarVerticalOffset = 36f;
+    private const float SegmentGap = 2f;
+    private const float CornerRadius = 3f;
+    private const float BorderPad = 2f;
+    private const float FlashDuration = 0.35f;
+    private const float GrowDuration = 0.3f;
+    private const float DazeTransitionDuration = 0.6f;
+    private const float FlashScaleUp = 1.3f;
 
-    private static readonly Color DazeFillColor = new("FFD700");
-    private static readonly Color DazeFullColor = new("FF4444");
-    private static readonly Color DazeBgColor = new("3A3A18");
+    private static readonly Color BgColor = new(0, 0, 0, 0.5f);
+    private static readonly Color BorderColor = new("555530");
+    private static readonly Color SegActiveColor = new("FFD700");
+    private static readonly Color SegFullColor = new("FF4444");
+    private static readonly Color SegDazedColor = new("9933FF");
 
     private static readonly FieldInfo CreatureField =
         AccessTools.Field(typeof(NHealthBar), "_creature");
-
     private static readonly FieldInfo FgContainerField =
         AccessTools.Field(typeof(NHealthBar), "_hpForegroundContainer");
+
+    private static readonly AttachedState<NHealthBar, int> PrevDazeValues = new(() => -1);
+    private static readonly AttachedState<NHealthBar, bool> PrevIsDazed = new(() => false);
+
+    private static readonly StringName MetaFlashTween = "DazeFlashTween";
+    private static readonly StringName MetaGrowTween = "DazeGrowTween";
+    private static readonly StringName MetaDazeTween = "DazeTransitionTween";
 
     public static ModPatchTarget[] GetTargets() =>
         [new(typeof(NHealthBar), "RefreshValues")];
@@ -43,92 +58,254 @@ internal sealed class DazeBarPatch : IPatchMethod
         var creature = (Creature?)CreatureField.GetValue(__instance);
         var container = (Control?)FgContainerField.GetValue(__instance);
 
-        if (creature == null || container == null)
+        if (creature == null || container == null || !creature.IsAlive || creature.Side != CombatSide.Enemy)
         {
-            HideAll(__instance);
+            HideAll(container);
             return;
         }
 
-        if (!creature.IsAlive || creature.Side != CombatSide.Enemy)
-        {
-            HideAll(__instance);
-            return;
-        }
-
-        // 获取失衡数据（Get 会自动初始化为满值）
         var daze = DazeStore.Get(creature);
         var current = daze.CurrentValue;
         var max = daze.MaxValue;
 
         var rect = container.GetRect();
-        var barWidth = rect.Size.X;
+        var totalWidth = rect.Size.X;
         var barY = rect.Size.Y - BarVerticalOffset;
-        var ratio = Mathf.Clamp((float)current / max, 0f, 1f);
+        var segWidth = max > 0 ? (totalWidth - SegmentGap * (max - 1)) / max : 0;
 
-        var bg = GetOrCreateNode<Panel>(container, "DazeBg", CreateBg);
-        var fill = GetOrCreateNode<Panel>(container, "DazeFill", CreateFill);
-        var label = GetOrCreateNode<Label>(container, "DazeLabel", CreateLabel);
+        // 检测变化
+        var prev = PrevDazeValues[__instance];
+        var changed = prev != current;
+        PrevDazeValues[__instance] = current;
 
-        // 背景条
-        bg.SetPosition(new Vector2(0f, barY), false);
-        bg.SetSize(new Vector2(barWidth, BarHeight), false);
-        bg.Visible = true;
+        var wasDazed = PrevIsDazed[__instance];
+        var justEnteredDazed = daze.IsDazed && !wasDazed;
+        PrevIsDazed[__instance] = daze.IsDazed;
 
-        // 填充条：直接调整宽度（保持圆角不变形），外层 bg 做裁剪
-        fill.SetPosition(new Vector2(0f, barY), false);
-        fill.SetSize(new Vector2(barWidth * ratio, BarHeight), false);
-        fill.Visible = true;
+        // ── 边框（始终显示）──
+        var border = GetOrCreateNode<Panel>(container, "DazeBorder", CreateBorder);
+        border.SetPosition(new Vector2(-BorderPad, barY - BorderPad), false);
+        border.SetSize(new Vector2(totalWidth + BorderPad * 2, BarHeight + BorderPad * 2), false);
+        border.Visible = true;
 
-        // 颜色：每次创建新 StyleBox 并覆盖（GetThemeStylebox 返回副本，不能直接改）
-        Color fillColor;
-        if (daze.IsDazed)
-            fillColor = new Color("9933FF"); // 紫色：正在失衡
-        else if (daze.IsEmpty)
-            fillColor = DazeFullColor;       // 红色：即将失衡
-        else
-            fillColor = DazeFillColor;       // 黄色：正常倒计时
+        // ── 分段容器 ──
+        if (max <= 0) { HideSegments(container); ShowLabel(container, totalWidth, barY, daze); return; }
 
-        fill.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+        var segContainer = GetOrCreateNode<Control>(container, "DazeSegments", () => new Control
         {
-            BgColor = fillColor,
-            CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4,
-            CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4,
+            Name = "DazeSegments",
+            MouseFilter = Control.MouseFilterEnum.Ignore,
         });
+        segContainer.SetPosition(new Vector2(0f, barY), false);
+        segContainer.Size = new Vector2(totalWidth, BarHeight);
+        segContainer.Visible = true;
 
-        // 文字标签
-        label.SetPosition(new Vector2(0f, barY - TextVerticalOffset), false);
-        label.SetSize(new Vector2(barWidth, 40f), false);
-        label.Visible = true;
-        label.Text = $"{current}/{max}";
+        // 更新分段
+        for (var i = 0; i < max; i++)
+        {
+            var seg = GetOrCreateNode<Panel>(segContainer, $"Seg{i}", () => CreateSegment($"Seg{i}"));
+            var x = i * (segWidth + SegmentGap);
+            seg.SetPosition(new Vector2(x, 0), false);
+            seg.Visible = true;
+
+            Color color;
+            if (daze.IsDazed)
+                color = SegDazedColor;
+            else if (daze.IsFull)
+                color = SegFullColor;
+            else
+                color = i < current ? SegActiveColor : BgColor;
+
+            // 新点亮的分段：从宽度 0 逐渐展开
+            var isNewlyLit = changed && i == current - 1 && current > 0 && !daze.IsDazed;
+            if (isNewlyLit)
+            {
+                seg.SetSize(new Vector2(0, BarHeight), false);
+                StartGrow(seg, segWidth, BarHeight, color);
+            }
+            else if (!seg.HasMeta(MetaGrowTween) || !seg.GetMeta(MetaGrowTween).As<Tween>().IsValid())
+            {
+                seg.SetSize(new Vector2(segWidth, BarHeight), false);
+            }
+
+            // 刚进入失衡状态：所有分段逐渐变为紫色
+            if (justEnteredDazed && i < max)
+            {
+                StartDazeTransition(seg, color);
+            }
+            // 非动画中：更新颜色
+            else if (!seg.HasMeta(MetaDazeTween) || !seg.GetMeta(MetaDazeTween).As<Tween>().IsValid())
+            {
+                var currentStyle = seg.GetThemeStylebox("panel") as StyleBoxFlat;
+                if (currentStyle == null || currentStyle.BgColor != color)
+                {
+                    seg.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+                    {
+                        BgColor = color,
+                        CornerRadiusTopLeft = (int)CornerRadius,
+                        CornerRadiusTopRight = (int)CornerRadius,
+                        CornerRadiusBottomLeft = (int)CornerRadius,
+                        CornerRadiusBottomRight = (int)CornerRadius,
+                    });
+                }
+            }
+        }
+
+        // 隐藏多余分段
+        for (var i = max; i < 20; i++)
+        {
+            var old = segContainer.GetNodeOrNull<Panel>($"Seg{i}");
+            if (old != null) old.Visible = false;
+        }
+
+        // ── 标签 ──
+        ShowLabel(container, totalWidth, barY, daze);
     }
 
-    private static Panel CreateBg()
+    private static void ShowLabel(Control container, float totalWidth, float barY, DazeState daze)
     {
-        var panel = new Panel { Name = "DazeBg" };
-        var style = new StyleBoxFlat
+        var label = GetOrCreateNode<Label>(container, "DazeLabel", CreateLabel);
+        label.SetPosition(new Vector2(0f, barY - BarHeight - 6f), false);
+        label.SetSize(new Vector2(totalWidth, BarHeight + 4f), false);
+        label.Visible = true;
+
+        if (daze.IsDazed)
         {
-            BgColor = DazeBgColor,
-            CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4,
-            CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4,
+            label.Text = "失衡中";
+            label.AddThemeColorOverride("font_color", new Color("CC88FF"));
+        }
+        else if (daze.CurrentValue <= 0)
+        {
+            label.Text = $"{daze.CurrentValue}/{daze.MaxValue}";
+            label.AddThemeColorOverride("font_color", new Color("888866"));
+        }
+        else
+        {
+            label.Text = $"{daze.CurrentValue}/{daze.MaxValue}";
+            label.AddThemeColorOverride("font_color", daze.IsFull ? SegFullColor : SegActiveColor);
+        }
+    }
+
+    private static void HideSegments(Control container)
+    {
+        var segs = container.GetNodeOrNull<Control>("DazeSegments");
+        if (segs != null) segs.Visible = false;
+    }
+
+    // ── 动画 ──
+
+    private static void StartGrow(Panel seg, float targetWidth, float targetHeight, Color targetColor)
+    {
+        if (seg.HasMeta(MetaGrowTween))
+        {
+            var existing = seg.GetMeta(MetaGrowTween).As<Tween>();
+            if (existing != null && existing.IsValid()) return;
+        }
+
+        seg.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+        {
+            BgColor = new Color("FFFFFF"),
+            CornerRadiusTopLeft = (int)CornerRadius,
+            CornerRadiusTopRight = (int)CornerRadius,
+            CornerRadiusBottomLeft = (int)CornerRadius,
+            CornerRadiusBottomRight = (int)CornerRadius,
+        });
+        seg.PivotOffset = new Vector2(0, targetHeight * 0.5f);
+        seg.Scale = new Vector2(1f, FlashScaleUp);
+
+        var tween = seg.CreateTween().SetParallel(true);
+
+        tween.TweenProperty(seg, "size", new Vector2(targetWidth, targetHeight), GrowDuration)
+            .SetEase(Tween.EaseType.Out)
+            .SetTrans(Tween.TransitionType.Expo);
+
+        tween.TweenMethod(Callable.From<Color>(c =>
+        {
+            seg.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+            {
+                BgColor = c,
+                CornerRadiusTopLeft = (int)CornerRadius,
+                CornerRadiusTopRight = (int)CornerRadius,
+                CornerRadiusBottomLeft = (int)CornerRadius,
+                CornerRadiusBottomRight = (int)CornerRadius,
+            });
+        }), new Color("FFFFFF"), targetColor, FlashDuration)
+            .SetEase(Tween.EaseType.Out)
+            .SetTrans(Tween.TransitionType.Expo);
+
+        tween.TweenProperty(seg, "scale:y", 1f, FlashDuration)
+            .SetEase(Tween.EaseType.Out)
+            .SetTrans(Tween.TransitionType.Elastic);
+
+        tween.Chain().Finished += () =>
+        {
+            seg.Scale = Vector2.One;
+            seg.PivotOffset = Vector2.Zero;
+            if (seg.HasMeta(MetaGrowTween)) seg.RemoveMeta(MetaGrowTween);
         };
-        panel.AddThemeStyleboxOverride("panel", style);
+        seg.SetMeta(MetaGrowTween, tween);
+    }
+
+    private static void StartDazeTransition(Panel seg, Color targetColor)
+    {
+        if (seg.HasMeta(MetaDazeTween))
+        {
+            var existing = seg.GetMeta(MetaDazeTween).As<Tween>();
+            if (existing != null && existing.IsValid()) return;
+        }
+
+        var currentStyle = seg.GetThemeStylebox("panel") as StyleBoxFlat;
+        var startColor = currentStyle?.BgColor ?? SegActiveColor;
+
+        var tween = seg.CreateTween();
+        tween.TweenMethod(Callable.From<Color>(c =>
+        {
+            seg.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+            {
+                BgColor = c,
+                CornerRadiusTopLeft = (int)CornerRadius,
+                CornerRadiusTopRight = (int)CornerRadius,
+                CornerRadiusBottomLeft = (int)CornerRadius,
+                CornerRadiusBottomRight = (int)CornerRadius,
+            });
+        }), startColor, targetColor, DazeTransitionDuration)
+            .SetEase(Tween.EaseType.InOut)
+            .SetTrans(Tween.TransitionType.Sine);
+
+        tween.Finished += () =>
+        {
+            if (seg.HasMeta(MetaDazeTween)) seg.RemoveMeta(MetaDazeTween);
+        };
+        seg.SetMeta(MetaDazeTween, tween);
+    }
+
+    // ── 节点工厂 ──
+
+    private static Panel CreateSegment(string name)
+    {
+        var panel = new Panel { Name = name, MouseFilter = Control.MouseFilterEnum.Ignore };
+        panel.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+        {
+            BgColor = BgColor,
+            CornerRadiusTopLeft = (int)CornerRadius,
+            CornerRadiusTopRight = (int)CornerRadius,
+            CornerRadiusBottomLeft = (int)CornerRadius,
+            CornerRadiusBottomRight = (int)CornerRadius,
+        });
         return panel;
     }
 
-    private static Panel CreateFill()
+    private static Panel CreateBorder()
     {
-        var panel = new Panel
+        var panel = new Panel { Name = "DazeBorder", MouseFilter = Control.MouseFilterEnum.Ignore };
+        panel.AddThemeStyleboxOverride("panel", new StyleBoxFlat
         {
-            Name = "DazeFill",
-            ClipContents = true,
-        };
-        var style = new StyleBoxFlat
-        {
-            BgColor = DazeFillColor,
-            CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4,
-            CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4,
-        };
-        panel.AddThemeStyleboxOverride("panel", style);
+            BgColor = BorderColor,
+            CornerRadiusTopLeft = (int)(CornerRadius + BorderPad),
+            CornerRadiusTopRight = (int)(CornerRadius + BorderPad),
+            CornerRadiusBottomLeft = (int)(CornerRadius + BorderPad),
+            CornerRadiusBottomRight = (int)(CornerRadius + BorderPad),
+        });
         return panel;
     }
 
@@ -139,11 +316,12 @@ internal sealed class DazeBarPatch : IPatchMethod
             Name = "DazeLabel",
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
         };
-        label.AddThemeColorOverride("font_color", new Color("FFFFAA"));
+        label.AddThemeColorOverride("font_color", SegActiveColor);
         label.AddThemeColorOverride("font_outline_color", new Color("1A1A00"));
         label.AddThemeConstantOverride("outline_size", 4);
-        label.AddThemeFontSizeOverride("font_size", 20);
+        label.AddThemeFontSizeOverride("font_size", 18);
         return label;
     }
 
@@ -158,17 +336,14 @@ internal sealed class DazeBarPatch : IPatchMethod
         return node;
     }
 
-    private static void HideAll(NHealthBar bar)
+    private static void HideAll(Control? container)
     {
-        var container = (Control?)FgContainerField.GetValue(bar);
         if (container == null) return;
-
-        var bg = container.GetNodeOrNull<Panel>("DazeBg");
-        var fill = container.GetNodeOrNull<Panel>("DazeFill");
+        var border = container.GetNodeOrNull<Panel>("DazeBorder");
+        var segs = container.GetNodeOrNull<Control>("DazeSegments");
         var label = container.GetNodeOrNull<Label>("DazeLabel");
-
-        if (bg != null) bg.Visible = false;
-        if (fill != null) fill.Visible = false;
+        if (border != null) border.Visible = false;
+        if (segs != null) segs.Visible = false;
         if (label != null) label.Visible = false;
     }
 }

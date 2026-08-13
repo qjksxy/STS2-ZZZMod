@@ -8,12 +8,13 @@ namespace ZZZMod.Code.Daze;
 
 /// <summary>
 ///     失衡系统核心入口。
+///     基础失衡易伤通过 HashSet 跟踪（不受人工制品影响）。
+///     额外失衡易伤（DazeVulnerablePower）通过 Power 系统（可被人工作品抵消）。
 /// </summary>
 public static class DazeSystem
 {
-    /// <summary>
-    ///     计算怪物的失衡条上限：maxHP / 8，最低 4。
-    /// </summary>
+    internal static readonly HashSet<Creature> DazedCreatures = new();
+
     public static int CalcMaxDaze(Creature creature)
     {
         return Math.Max(4, creature.MaxHp / 12);
@@ -21,8 +22,18 @@ public static class DazeSystem
 
     public static void Init()
     {
-        RitsuLibFramework.SubscribeLifecycle<CombatStartingEvent>(_ => DazeStore.ClearAll());
-        RitsuLibFramework.SubscribeLifecycle<CombatEndedEvent>(_ => DazeStore.ClearAll());
+        RitsuLibFramework.SubscribeLifecycle<CombatStartingEvent>(_ =>
+        {
+            DazeStore.ClearAll();
+            DazedCreatures.Clear();
+        });
+
+        RitsuLibFramework.SubscribeLifecycle<CombatEndedEvent>(_ =>
+        {
+            DazeStore.ClearAll();
+            DazedCreatures.Clear();
+        });
+
         RitsuLibFramework.SubscribeLifecycle<SideTurnStartingEvent>(OnSideTurnStarting);
     }
 
@@ -43,17 +54,21 @@ public static class DazeSystem
             switch (action)
             {
                 case DazeTurnAction.ApplyDebuff:
-                    await PowerCmd.Apply<DazePower>(new ThrowingPlayerChoiceContext(), creature, 1, creature, null);
+                    DazedCreatures.Add(creature);
                     Entry.Logger.Debug($"[Daze] {creature} 进入失衡状态（受伤 +50%）");
                     break;
 
                 case DazeTurnAction.RemoveDebuff:
-                    var existing = creature.GetPower<DazePower>();
-                    if (existing != null)
-                        await PowerCmd.Remove(existing);
+                    DazedCreatures.Remove(creature);
+                    // 移除醉花月云转施加的额外失衡易伤（可被人工作品抵消的部分）
+                    var vuln = creature.GetPower<DazeVulnerablePower>();
+                    if (vuln != null)
+                        await PowerCmd.Remove(vuln);
                     Entry.Logger.Debug($"[Daze] {creature} 恢复，失衡条重置");
                     break;
             }
         }
     }
+
+    public static bool IsDazed(Creature creature) => DazedCreatures.Contains(creature);
 }
