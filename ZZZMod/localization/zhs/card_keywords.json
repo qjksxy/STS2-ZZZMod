@@ -1,4 +1,6 @@
 {
     "ZZZ_MOD_KEYWORD_OVERFLOW.description": "生命值满时生效。",
-    "ZZZ_MOD_KEYWORD_OVERFLOW.title": "满盈"
+    "ZZZ_MOD_KEYWORD_OVERFLOW.title": "满盈",
+    "ZZZ_MOD_KEYWORD_DECIBEL.description": "Decibel值足够时，消耗{Cost}点Decibel激活额外效果。",
+    "ZZZ_MOD_KEYWORD_DECIBEL.title": "Decibel"
 }
