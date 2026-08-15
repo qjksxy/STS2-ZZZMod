@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Models;
 using STS2RitsuLib.Combat.AttackHits;
 using STS2RitsuLib.Interop.AutoRegistration;
 using STS2RitsuLib.Models;
+using ZZZMod.Code.Decibel;
 
 namespace ZZZMod.Code.Daze;
 
@@ -28,7 +29,12 @@ public sealed class DazeHitListener : HookedSingletonModel, IAttackHitHookListen
             if (target.Side != CombatSide.Enemy) continue;
             if (!target.IsAlive) continue;
 
-            DazeStore.Get(target).AddDaze(dazeAmount);
+            var daze = DazeStore.Get(target);
+            var reachedMax = daze.AddDaze(dazeAmount);
+
+            // 失衡条满时获得 Decibel（失衡上限的一半）
+            if (reachedMax)
+                DecibelSystem.GainDecibel(daze.MaxValue / 2);
         }
 
         return Task.CompletedTask;

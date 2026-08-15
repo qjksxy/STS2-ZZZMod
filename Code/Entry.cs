@@ -5,13 +5,13 @@ using STS2RitsuLib;
 using STS2RitsuLib.Interop;
 using STS2RitsuLib.Patching.Core;
 using ZZZMod.Code.Daze;
+using ZZZMod.Code.Decibel;
 
 namespace ZZZMod.Code;
 
 [ModInitializer(nameof(Init))]
 public class Entry
 {
-    // 你的modid
     public const string ModId = "ZZZMod";
     public static readonly Logger Logger = RitsuLibFramework.CreateLogger(ModId);
 
@@ -19,15 +19,14 @@ public class Entry
     {
         var assembly = Assembly.GetExecutingAssembly();
         RitsuLibFramework.EnsureGodotScriptsRegistered(assembly, Logger);
-        // 自动注册内容
         ModTypeDiscoveryHub.RegisterModAssembly(ModId, assembly);
 
-        // 注册失衡系统 Harmony 补丁
-        var patcher = RitsuLibFramework.CreatePatcher(ModId, "daze");
+        var patcher = RitsuLibFramework.CreatePatcher(ModId, "combat");
         patcher.RegisterPatch<DazeBarPatch>();
+        patcher.RegisterPatch<DecibelBarPatch>();
         patcher.PatchAll();
 
-        // 注册失衡系统生命周期
         DazeSystem.Init();
+        DecibelSystem.Init();
     }
 }
