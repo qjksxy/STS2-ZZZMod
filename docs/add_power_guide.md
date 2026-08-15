@@ -102,20 +102,21 @@ public sealed class YourPower : ModPowerTemplate
 
 ## 3. 效果钩子（Hooks）
 
-在 `ModPowerTemplate` 中重写以下方法来实现效果：
+在 `ModPowerTemplate` 中重写以下方法来实现效果（继承自游戏 `PowerModel` / `AbstractModel`）：
 
 | 钩子方法 | 触发时机 | 参数说明 |
 |---------|---------|---------|
-| `AfterSideTurnEnd` | 某方回合结束时 | `side`: 当前回合方，`participants`: 参与者列表 |
-| `AfterCardDrawn` | 抽牌后 | `card`: 抽到的牌，`fromHandDraw`: 是否从手牌堆抽取 |
-| `AfterTurnStart` | 回合开始时 | `choiceContext` |
-| `BeforeTurnStart` | 回合开始前 | `choiceContext` |
-| `AfterAttackHit` | 攻击命中后 | `attacker`, `target`, `damage`, `isCrit` |
+| `AfterSideTurnStart` | 某方回合开始时 | `side`: 回合方，`participants`: 参与者列表，`combatState` |
+| `AfterSideTurnEnd` | 某方回合结束时 | `choiceContext`, `side`, `participants` |
+| `AfterCardPlayed` | 打出卡牌后 | `choiceContext`, `cardPlay` |
+| `AfterDamageReceived` | 受到伤害后 | `choiceContext`, `target`, `result`, `props`, `dealer`, `cardSource` |
+| `AfterApplied` | 能力首次施加时 | `applier`: 施加者，`cardSource`: 来源卡牌 |
+| `AfterRemoved` | 能力移除时 | `oldOwner`: 原拥有者 |
 
 **常用模式：**
 
 ```csharp
-// 只在拥有者回合结束时生效
+// 只在拥有者所在方回合结束时生效
 public override async Task AfterSideTurnEnd(
     PlayerChoiceContext choiceContext, CombatSide side, IEnumerable<Creature> participants)
 {
@@ -123,13 +124,23 @@ public override async Task AfterSideTurnEnd(
     // 执行效果
 }
 
-// 每次抽牌时生效
-public override async Task AfterCardDrawn(
-    PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
+// 敌人回合开始时触发（如延迟伤害、中毒）
+public override async Task AfterSideTurnStart(
+    CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
 {
+    if (side != Owner.Side || !participants.Contains(Owner)) return;
+    // 执行效果
+}
+
+// 每次打出卡牌时触发（如计数类效果）
+public override async Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+{
+    if (cardPlay.Card.Owner != Owner.Player) return;
     // 执行效果
 }
 ```
+
+> 钩子方法请以反编译源码 `SlayTheSpire2/src/Core/Models/AbstractModel.cs` 中的实际签名为准。
 
 ---
 
@@ -153,6 +164,44 @@ await PowerCmd.Apply<StrengthPower>(choiceContext, Owner, Amount, Owner, null);
 // 示例：给目标施加虚弱
 await PowerCmd.Apply<WeakPower>(choiceContext, target, Amount, Owner, null);
 ```
+
+---
+
+### 4.1 能力携带自定义数据
+
+需要为能力存额外数据（如「急冻修剪法」的延迟伤害值、「风铃与旧约」的触发门槛）时，使用 `InitInternalData` + `GetInternalData<T>` 模式（数据可随存档序列化）：
+
+```csharp
+public sealed class YourPower : ModPowerTemplate
+{
+    private class Data
+    {
+        public int StoredValue;
+    }
+
+    protected override object? InitInternalData() => new Data();
+
+    // 首次施加时从来源卡牌读取数值
+    public override Task AfterApplied(Creature? applier, CardModel? cardSource)
+    {
+        if (cardSource is YourCard card)
+            GetInternalData<Data>().StoredValue = card.DynamicVars["Magic"].IntValue;
+        return Task.CompletedTask;
+    }
+
+    // 使用数据
+    public override async Task AfterSideTurnStart(
+        CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
+    {
+        if (side != Owner.Side || !participants.Contains(Owner)) return;
+        var value = GetInternalData<Data>().StoredValue;
+        // 执行效果
+    }
+}
+```
+
+> 参考实现：`Code/Powers/FrostbitePower.cs`（延迟伤害）、`Code/Powers/WindchimesAndOathsPower.cs`（回合末判定）。
+> 注意：`PowerCmd.Apply<T>` 首次施加时才回调 `AfterApplied`；同类型叠加（Counter）只增加层数，数据保持不变。
 
 ---
 
@@ -202,8 +251,11 @@ await PowerCmd.Apply<WeakPower>(choiceContext, target, Amount, Owner, null);
 ## 7. 构建与测试
 
 ```bash
-# 编译并复制到游戏 mods 目录
+# 编译验证（开发迭代，只看编译是否通过）
 dotnet build
+
+# 部署到游戏（DLL + 导出 .pck + 复制到游戏 mods 目录）
+./autobuild.bat          # 即 dotnet build -t:ExportPck
 
 # 使用控制台指令测试（战斗中按 ~ 打开控制台）
 # power ZZZ_MOD_POWER_YOUR_POWER 1 0

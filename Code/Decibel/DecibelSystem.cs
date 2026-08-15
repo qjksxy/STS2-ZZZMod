@@ -1,9 +1,11 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Runs;
 using STS2RitsuLib;
 using STS2RitsuLib.RunData;
+using STS2RitsuLib.Scaffolding.Cards.HandGlow;
 
 namespace ZZZMod.Code.Decibel;
 
@@ -32,7 +34,29 @@ public static class DecibelSystem
         RitsuLibFramework.SubscribeLifecycle<CombatEndedEvent>(OnCombatEnded);
         RitsuLibFramework.SubscribeLifecycle<CardPlayedEvent>(OnCardPlayed);
         RitsuLibFramework.SubscribeLifecycle<CreatureDiedEvent>(OnCreatureDied);
+
+        RegisterDecibelCardGlows();
     }
+
+    /// <summary>
+    ///     为所有实现 <see cref="IDecibelCardSource" /> 的卡牌注册手牌金色高亮：
+    ///     当喧响值足够激活额外效果时，手牌中的该卡发光提示。
+    /// </summary>
+    private static void RegisterDecibelCardGlows()
+    {
+        var assembly = typeof(DecibelSystem).Assembly;
+        foreach (var type in assembly.GetTypes())
+        {
+            if (type.IsAbstract || type.IsInterface) continue;
+            if (!typeof(CardModel).IsAssignableFrom(type)) continue;
+            if (!typeof(IDecibelCardSource).IsAssignableFrom(type)) continue;
+
+            ModCardHandGlowRegistry.Register(type, ModCardHandGlowRules.Gold(CanActivateDecibelEffect));
+        }
+    }
+
+    private static bool CanActivateDecibelEffect(CardModel card) =>
+        card is IDecibelCardSource source && CanSpend(source.DecibelCost);
 
     private static void OnCombatStarting(CombatStartingEvent evt)
     {

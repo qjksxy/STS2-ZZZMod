@@ -241,8 +241,11 @@ SetEventFinished(L10NLookup($"{Id.Entry}.pages.END_PAGE.description"));
 ## 6. 构建与测试
 
 ```bash
-# 编译并复制到游戏 mods 目录
+# 编译验证（开发迭代，只看编译是否通过）
 dotnet build
+
+# 部署到游戏（DLL + 导出 .pck + 复制到游戏 mods 目录）
+./autobuild.bat          # 即 dotnet build -t:ExportPck
 
 # 进入对应章节后，有概率遇到事件
 ```

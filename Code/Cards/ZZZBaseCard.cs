@@ -1,3 +1,4 @@
+using Godot;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -8,6 +9,7 @@ using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
 using STS2RitsuLib.Interop.AutoRegistration;
+using STS2RitsuLib.Keywords;
 using STS2RitsuLib.Scaffolding.Content;
 using ZZZMod.Code.Daze;
 
@@ -54,6 +56,24 @@ public abstract class ZZZBaseCard : ModCardTemplate, IDazeCardSource
 
     protected sealed override IEnumerable<IHoverTip> AdditionalHoverTips =>
         BaseHoverTips.Concat(OwnAdditionalHoverTips);
+
+    /// <summary>
+    ///     创建喧响关键词悬浮提示，并把本地化描述中的 {Cost} 解析为实际的喧响消耗数值。
+    ///     RitsuLib 的 CreateHoverTip 只注入 energyPrefix，{Cost} 无法自动解析，需要在此注入。
+    /// </summary>
+    protected static IHoverTip CreateDecibelHoverTip(int cost)
+    {
+        var id = ZZZModKeywords.Decibel;
+        var description = ModKeywordRegistry.GetDescription(id);
+        description.Add("Cost", cost);
+
+        Texture2D? icon = null;
+        var definition = ModKeywordRegistry.Get(id);
+        if (!string.IsNullOrWhiteSpace(definition.IconPath) && ResourceLoader.Exists(definition.IconPath))
+            icon = ResourceLoader.Load<Texture2D>(definition.IconPath);
+
+        return new HoverTip(ModKeywordRegistry.GetTitle(id), description, icon);
+    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // 自定义关键词 —— 基类 + 子类分层合并

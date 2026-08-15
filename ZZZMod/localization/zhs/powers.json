@@ -9,5 +9,9 @@
     "ZZZ_MOD_POWER_TIME_BARRIER_POWER.title": "时间障壁",
     "ZZZ_MOD_POWER_TIME_BARRIER_POWER.description": "本回合受到攻击时，攻击者失衡 +1。",
     "ZZZ_MOD_POWER_DAZE_VULNERABLE_POWER.title": "失衡易伤",
-    "ZZZ_MOD_POWER_DAZE_VULNERABLE_POWER.description": "失衡期间受到的额外伤害提升50%。"
+    "ZZZ_MOD_POWER_DAZE_VULNERABLE_POWER.description": "失衡期间受到的额外伤害提升50%。",
+    "ZZZ_MOD_POWER_FROSTBITE_POWER.title": "急冻",
+    "ZZZ_MOD_POWER_FROSTBITE_POWER.description": "下回合开始时受到「急冻修剪法」的伤害，每层触发一次。",
+    "ZZZ_MOD_POWER_WINDCHIMES_AND_OATHS_POWER.title": "风铃与旧约",
+    "ZZZ_MOD_POWER_WINDCHIMES_AND_OATHS_POWER.description": "本回合内打出的牌数达到要求时，回合结束时额外获得1层力量。"
 }
