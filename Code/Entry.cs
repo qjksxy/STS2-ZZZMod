@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Modding;
 using STS2RitsuLib;
 using STS2RitsuLib.Interop;
 using STS2RitsuLib.Patching.Core;
+using ZZZMod.Code.Chain;
 using ZZZMod.Code.Daze;
 using ZZZMod.Code.Decibel;
 
@@ -28,5 +29,6 @@ public class Entry
 
         DazeSystem.Init();
         DecibelSystem.Init();
+        ChainSystem.Init();
     }
 }

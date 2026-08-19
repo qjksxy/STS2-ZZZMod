@@ -32,5 +32,9 @@
     "ZZZ_MOD_CARD_FLASH_FREEZE_TRIMMING.title": "急冻修剪法",
     "ZZZ_MOD_CARD_FLASH_FREEZE_TRIMMING.description": "对敌人造成{Damage:diff()}点伤害，下回合继续造成{Damage:diff()}点伤害。",
     "ZZZ_MOD_CARD_ENDLESS_WINTER.title": "永冬狂宴",
-    "ZZZ_MOD_CARD_ENDLESS_WINTER.description": "对敌人造成{Damage:diff()}点伤害。[gold]喧响[/gold]：额外造成{Magic:diff()}点伤害。"
+    "ZZZ_MOD_CARD_ENDLESS_WINTER.description": "对敌人造成{Damage:diff()}点伤害。[gold]喧响[/gold]：额外造成{Magic:diff()}点伤害。",
+    "ZZZ_MOD_CARD_CHORD_SHIELD.title": "和弦护盾",
+    "ZZZ_MOD_CARD_CHORD_SHIELD.description": "获得{Block:diff()}点格挡。[gold]连携[/gold]：连续打出3张技能牌时自动打出。",
+    "ZZZ_MOD_CARD_BEAT_BLADE.title": "节拍刃",
+    "ZZZ_MOD_CARD_BEAT_BLADE.description": "造成{Damage:diff()}点伤害。[gold]连携[/gold]：连续打出2张攻击牌时自动打出。"
 }

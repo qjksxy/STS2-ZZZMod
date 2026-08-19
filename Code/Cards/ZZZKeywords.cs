@@ -6,6 +6,7 @@ namespace ZZZMod.Code.Cards;
 
 [RegisterOwnedCardKeyword(nameof(Overflow), IconPath = "res://icon.svg")]
 [RegisterOwnedCardKeyword(nameof(Decibel), IconPath = "res://icon.svg")]
+[RegisterOwnedCardKeyword(nameof(Chain), IconPath = "res://icon.svg")]
 public class ZZZModKeywords
 {
     /// <summary>
@@ -19,4 +20,10 @@ public class ZZZModKeywords
     /// </summary>
     public static readonly string Decibel =
         ModContentRegistry.GetQualifiedKeywordId(Entry.ModId, nameof(Decibel));
+
+    /// <summary>
+    ///     连携：在手牌中满足特定条件时自动打出。
+    /// </summary>
+    public static readonly string Chain =
+        ModContentRegistry.GetQualifiedKeywordId(Entry.ModId, nameof(Chain));
 }

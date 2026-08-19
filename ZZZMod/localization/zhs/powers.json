@@ -13,5 +13,8 @@
     "ZZZ_MOD_POWER_FROSTBITE_POWER.title": "急冻",
     "ZZZ_MOD_POWER_FROSTBITE_POWER.description": "下回合开始时受到「急冻修剪法」的伤害，每层触发一次。",
     "ZZZ_MOD_POWER_WINDCHIMES_AND_OATHS_POWER.title": "风铃与旧约",
-    "ZZZ_MOD_POWER_WINDCHIMES_AND_OATHS_POWER.description": "本回合内打出的牌数达到要求时，回合结束时额外获得1层力量。"
+    "ZZZ_MOD_POWER_WINDCHIMES_AND_OATHS_POWER.description": "本回合内打出的牌数达到要求时，回合结束时额外获得1层力量。",
+    "ZZZ_MOD_POWER_CHAIN_COST_REDUCTION_POWER.title": "连携共鸣",
+    "ZZZ_MOD_POWER_CHAIN_COST_REDUCTION_POWER.description": "下{Amount}次抽到带有连携标签的卡牌时，其费用变为0。",
+    "ZZZ_MOD_POWER_CHAIN_COST_REDUCTION_POWER.smartDescription": "下[blue]{Amount}[/blue]次抽到带有连携标签的卡牌时，其费用变为0。"
 }
