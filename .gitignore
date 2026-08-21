@@ -51,3 +51,5 @@ local.props
 Thumbs.db
 __pycache__/
 *.py[cod]
+
+docs/

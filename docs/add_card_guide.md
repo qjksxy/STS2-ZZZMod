@@ -1,21 +1,54 @@
 # 添加卡牌流程（zzz-mod）
 
 > 所有准备实现的卡牌以 **`docs/Cards.csv` 为唯一实现依据**；本文是编写代码与本地化的步骤。
-> 基于 STS2-RitsuLib 框架，可参考现有卡牌：`TimeEdge`（失衡攻击）、`EndlessWinter`（喧响攻击）、`FlashConnect`（纯失衡技能）。
+> 基于 STS2-RitsuLib 框架，可参考现有卡牌：`Shimotsuki`（消耗+群体攻击）、`EndlessWinter`（喧响攻击）、`PleaseDoNotResist`（连携攻击）、`RaieiTenge`（喧响技能）、`GekkaRuten`（失衡条件判定）。
+> 已实现卡牌清单见 `docs/implemented_cards.md`，更新 Cards.csv 后对比此文件快速定位变更。
 
 ---
 
 ## 0. 卡牌设计流水线（Cards.csv）
 
-在写代码之前，先在表格中完成卡牌设计：
+### 0.1 前置检查（必须在实现前完成）
 
-1. 在 `docs/Cards.csv` 填写卡牌行（`ID` 列使用英文 Title Case，如 `Charged Beat`；稀有度用 普通/罕见/稀有，对应 Common/Uncommon/Rare）
-2. 运行 `python docs/csv_to_cards.py`，自动生成 `ZZZMod/localization/zhs/cards_generated.json`（title + description 条目）
-3. 将生成的条目并入 `cards.json`（可按需添加 `[gold]` 等展示标记）
-4. 按本文以下步骤编写卡牌类
+在写任何代码之前，**必须先对 `docs/Cards.csv` 中的每张卡牌执行以下检查**：
 
-**约定：**
+**第一轮：必要属性完整性**
 
+| 列 | 要求 | 常见问题 |
+|----|------|---------|
+| ID | 非空，英文 Title Case | 缺失、使用了中文 |
+| 名称 | 非空 | 缺失 |
+| 稀有度 | 基础/普通/罕见/稀有 之一 | 缺失、使用了英文 |
+| 费用 | 非空，数字 | 缺失、非数字 |
+| 类别 | 攻击/技能/能力 之一 | 缺失 |
+
+**第二轮：描述清晰度**
+
+- 卡牌效果描述是否无歧义，能否明确理解其机制
+- 效果中的数值是否都能对应到 CSV 中的 伤害/强伤/防御/强防/魔法/强魔 列
+- 升级效果是否明确（为空则按 强X 列自动推导）
+
+**第三轮：中英文命名一致性**
+
+- `ID` 列的英文命名即为代码中的类名依据（Title Case 转 PascalCase，如 `Charged Beat` → `ChargedBeat`）
+- `名称` 列的中文即为本地化 `.title` 值
+- **代码中所有英文命名必须严格按照 `ID` 列给定的翻译**，不得使用拼音或自行翻译
+- 检查 ID 与名称的对应关系是否合理（音译/意译一致性）
+
+**检查结果处理：**
+
+- 若有任何卡牌存在问题，**列出所有问题卡牌及具体问题，报告给用户后结束**，不进入实现阶段
+- `Cards.csv` 是生成的文件，**不得直接修改**，任何问题必须报告给用户，由用户修改
+
+### 0.2 实现阶段（所有卡牌通过检查后）
+
+1. 运行 `python docs/csv_to_cards.py`，自动生成 `ZZZMod/localization/zhs/cards_generated.json`（title + description 条目）
+2. 将生成的条目并入 `cards.json`（可按需添加 `[gold]` 等展示标记）
+3. 按本文以下步骤编写卡牌类
+
+**红线约定：**
+
+- **不得擅自实现 `Cards.csv` 中没有的卡牌**。有新的卡牌设计想法，可以整理为文档记录，但不得修改 `Cards.csv` 或直接实现
 - `docs/` 下的设计稿（如 `daze_system.md`、`decibel_cards_design.md`）只是**前期参考，不作为实现方案**，一切以 `Cards.csv` 为准
 - `Cards.csv` 的「对应角色」列仅供卡图绘制参考，开发时忽略；玩家角色始终是法厄同（Phaethon）
 - 失衡（Daze）为**正向计数**：打出卡牌累积敌人的失衡值，累积满后敌人进入失衡状态（受伤 +50%）。游戏内文本措辞后期统一规范，开发时不要纠结文案方向
@@ -236,7 +269,122 @@ public sealed class YourDecibelCard() : ZZZBaseCard(2, CardType.Attack, CardRari
 
 ---
 
-### 1.6 ZZZBaseCard 常用辅助方法
+### 1.6 连携卡牌（IChainCardSource）
+
+连携效果：在手牌中满足特定条件时，自动从手牌打出（不消耗费用）。
+
+```csharp
+using MegaCrit.Sts2.Core.Combat;
+using STS2RitsuLib.Keywords;
+using ZZZMod.Code.Chain;
+using ZZZMod.Code.Pools;
+
+[RegisterCard(typeof(ZZZCardPool))]
+public sealed class YourChainCard() : ZZZBaseCard(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy, true),
+    IChainCardSource
+{
+    /// <summary>连携条件：连续打出2张攻击牌。</summary>
+    public bool CheckChainCondition(CardModel card, CardModel lastPlayed)
+    {
+        if (lastPlayed.Type != CardType.Attack) return false;
+
+        var combatState = card.CombatState;
+        if (combatState == null) return false;
+
+        var combatManager = CombatManager.Instance;
+        if (combatManager == null) return false;
+        var history = combatManager.History;
+        if (history == null) return false;
+
+        var recentPlays = history.CardPlaysFinished
+            .Where(e => e.HappenedThisTurn(combatState)
+                     && e.CardPlay.Player == card.Owner
+                     && !e.CardPlay.IsAutoPlay)
+            .TakeLast(2)
+            .ToList();
+
+        if (recentPlays.Count < 2) return false;
+        return recentPlays.All(e => e.CardPlay.Card.Type == CardType.Attack);
+    }
+
+    // 悬浮提示：连携关键词（使用 ModKeywordRegistry 构造）
+    protected override IEnumerable<IHoverTip> OwnAdditionalHoverTips
+    {
+        get
+        {
+            var id = ZZZModKeywords.Chain;
+            var description = ModKeywordRegistry.GetDescription(id);
+            yield return new HoverTip(ModKeywordRegistry.GetTitle(id), description);
+        }
+    }
+
+    protected override IEnumerable<string> OwnKeywordIds => [ZZZModKeywords.Chain];
+
+    protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+    {
+        if (!EnsureTarget(cardPlay, out var target)) return;
+        await DealDamage(choiceContext, DynamicVars.Damage, target, cardPlay);
+    }
+}
+```
+
+**要点：**
+
+- 实现 `IChainCardSource` 接口，编写 `CheckChainCondition` 方法定义触发条件
+- `CheckChainCondition` 中访问 `CombatManager.Instance` 和 `History` 前**必须做空检查**
+- 关键词悬浮提示使用 `ModKeywordRegistry.GetDescription/GetTitle` 构造（`HoverTipFactory.FromKeyword` 仅支持游戏内建 `CardKeyword` 枚举）
+- `OwnKeywordIds` 声明 `ZZZModKeywords.Chain`
+- **手牌高亮自动生效**：`ChainSystem.Init()` 会扫描程序集，所有实现 `IChainCardSource` 的卡牌在条件满足时自动发金光，无需额外注册
+- 连携触发的牌不会再次触发连携（`IsAutoPlay` 标志防无限循环）
+- 本地化描述中连携关键词使用 `[gold]连携[/gold]` 高亮
+
+---
+
+### 1.7 消耗与虚无（原版内建关键词）
+
+消耗（Exhaust）和虚无（Ethereal）是游戏原生关键词，通过 `CanonicalKeywords` 声明：
+
+```csharp
+// 消耗：打出后进入消耗堆而非弃牌堆
+public override IEnumerable<CardKeyword> CanonicalKeywords => [CardKeyword.Exhaust];
+
+// 虚无：回合结束时若仍在手中则消耗
+public override IEnumerable<CardKeyword> CanonicalKeywords => [CardKeyword.Ethereal];
+
+// 两者可组合
+public override IEnumerable<CardKeyword> CanonicalKeywords => [CardKeyword.Ethereal, CardKeyword.Exhaust];
+```
+
+悬浮提示使用 `HoverTipFactory.FromKeyword(CardKeyword.Exhaust)` 等。本地化描述中使用 `[gold]消耗[/gold]` / `[gold]虚无[/gold]` 高亮。
+
+参考：`Shimotsuki`（消耗+群体攻击）
+
+---
+
+### 1.8 生成 Token 卡牌
+
+能力或卡牌可以在运行时生成新的卡牌实例加入手牌。典型场景：落霜能力累积满后生成「霜月」。
+
+```csharp
+// 在 Power 中生成卡牌加入手牌
+var combatState = CombatState;
+if (combatState != null && !CombatManager.Instance.IsOverOrEnding)
+{
+    var card = combatState.CreateCard<Shimotsuki>(Owner.Player);
+    await CardPileCmd.AddGeneratedCardToCombat(card, PileType.Hand, Owner.Player);
+}
+```
+
+**要点：**
+
+- `CombatState.CreateCard<T>(player)` 创建卡牌实例（`T` 为卡牌类型）
+- `CardPileCmd.AddGeneratedCardToCombat(card, pileType, player)` 将卡牌加入指定牌堆
+- 生成前检查 `!CombatManager.Instance.IsOverOrEnding`（战斗已结束时不要生成）
+- 参考：`Shiv.CreateInHand`、`FallenFrostPower`（生成霜月）、`CollisionCourse`（生成 Debris）
+
+---
+
+### 1.9 ZZZBaseCard 常用辅助方法
 
 | 方法 | 签名 | 用途 |
 |------|------|------|
@@ -316,8 +464,9 @@ dotnet build
 | `CanonicalVars` | 定义所有数值变量 | `new DynamicVar("Amount", 1m)` |
 | `DazeAmount` | 每次攻击命中的失衡值 | `public override int DazeAmount => 2;` |
 | `DecibelCost` | 喧响消耗（实现 `IDecibelCardSource`） | `public int DecibelCost => DecibelData.DefaultCost;` |
+| `CheckChainCondition` | 连携条件判定（实现 `IChainCardSource`） | 参见 1.6 节 |
 | `OwnAdditionalHoverTips` | 关联能力/卡牌/关键词提示 | `CreateDecibelHoverTip(DecibelCost)` |
-| `OwnKeywordIds` | 声明自定义关键词 | `ZZZModKeywords.Decibel` |
+| `OwnKeywordIds` | 声明自定义关键词 | `ZZZModKeywords.Decibel` / `ZZZModKeywords.Chain` |
 | `OnPlay` | 卡牌打出逻辑 | `choiceContext`, `cardPlay` |
 | `OnUpgrade` | 升级效果 | `DynamicVars.Damage.UpgradeValueBy(4)` |
 | `CanonicalKeywords` | 游戏内建关键词 | `CardKeyword.Exhaust`, `CardKeyword.Innate` |

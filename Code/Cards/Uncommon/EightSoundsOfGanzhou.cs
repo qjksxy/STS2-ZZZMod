@@ -11,7 +11,7 @@ using ZZZMod.Code.Pools;
 namespace ZZZMod.Code.Cards.Uncommon;
 
 /// <summary>
-///     八声甘州 —— 2费群体攻击，对敌方全体造成4点伤害并施加3点失衡。
+///     八声甘州 —— 2费群体攻击，对敌方全体造成 {Damage} 点伤害并施加 {Magic} 点失衡。
 /// </summary>
 [RegisterCard(typeof(ZZZCardPool))]
 public sealed class EightSoundsOfGanzhou()
@@ -22,8 +22,8 @@ public sealed class EightSoundsOfGanzhou()
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
     [
-        new DamageVar(4, ValueProp.Move),
-        new DynamicVar("Magic", 3m),
+        new DamageVar(8, ValueProp.Move),
+        new DynamicVar("Magic", 6m),
     ];
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -50,7 +50,7 @@ public sealed class EightSoundsOfGanzhou()
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(2);
-        DynamicVars["Magic"].UpgradeValueBy(1m);
+        DynamicVars.Damage.UpgradeValueBy(3);
+        DynamicVars["Magic"].UpgradeValueBy(2m);
     }
 }

@@ -8,6 +8,7 @@
 |------|------|
 | `Cards.csv` | **★ 卡牌设计表（唯一实现依据）**，新卡先填这里 |
 | `csv_to_cards.py` | 从 CSV 生成 `cards_generated.json` 本地化 |
+| `implemented_cards.md` | **已实现卡牌清单**，更新 Cards.csv 后对比此文件快速定位变更 |
 
 ## 📖 添加内容指南
 
@@ -25,6 +26,7 @@
 |------|------|
 | [daze_system.md](daze_system.md) | 失衡系统机制与结构 |
 | [decibel_cards_design.md](decibel_cards_design.md) | 喧响卡牌设计稿 |
+| [chain_system.md](chain_system.md) | 连携系统机制与结构 |
 
 > **约定**：设计稿仅为前期参考，不作为实现方案；实现一律以 `Cards.csv` 为准。
 > `Cards.csv` 的「对应角色」列仅供卡图绘制参考，开发时忽略；玩家角色始终是法厄同（Phaethon）。
