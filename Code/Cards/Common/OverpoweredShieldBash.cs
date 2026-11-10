@@ -8,6 +8,8 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.ValueProps;
 using STS2RitsuLib.Interop.AutoRegistration;
+using STS2RitsuLib.Keywords;
+using ZZZMod.Code.Decibel;
 using ZZZMod.Code.Pools;
 using ZZZMod.Code.Powers;
 
@@ -27,8 +29,11 @@ public sealed class OverpoweredShieldBash() : ZZZBaseCard(
     ];
 
     protected override IEnumerable<IHoverTip> OwnAdditionalHoverTips => [
-        HoverTipFactory.FromPower<RoaringThrustPower>()
+        HoverTipFactory.FromPower<RoaringThrustPower>(),
+        CreateDecibelHoverTip(DecibelData.DefaultCost)
     ];
+
+    protected override IEnumerable<string> OwnKeywordIds => [ZZZModKeywords.Decibel];
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {

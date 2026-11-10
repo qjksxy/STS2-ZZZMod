@@ -11,8 +11,8 @@ using ZZZMod.Code.Pools;
 namespace ZZZMod.Code.Cards.Uncommon;
 
 /// <summary>
-///     醉花月云转 —— 1费攻击，造成6点伤害并施加3点失衡。
-///     若此卡使敌人失衡值降至0，失衡易伤倍率额外+50%（总计100%）。
+///     醉花月云转 —— 1费攻击，对目标造成 {Damage} 点伤害并施加 {Magic} 点失衡。
+///     失衡易伤倍率额外提升50%（实现为总计100%，见 docs/implementation_blockers.md 口径26）。
 /// </summary>
 [RegisterCard(typeof(ZZZCardPool))]
 public sealed class EnchantedMoonlitBlossoms()

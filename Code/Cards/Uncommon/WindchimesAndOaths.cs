@@ -21,7 +21,7 @@ public sealed class WindchimesAndOaths() : ZZZBaseCard(2, CardType.Skill, CardRa
 {
     protected override IEnumerable<DynamicVar> CanonicalVars => [
         new BlockVar(12, ValueProp.Move),
-        new DynamicVar("Magic", 5m)
+        new DynamicVar("Magic", 4m)   // 魔法列
     ];
 
     protected override IEnumerable<IHoverTip> OwnAdditionalHoverTips => [

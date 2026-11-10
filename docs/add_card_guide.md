@@ -27,10 +27,12 @@
 - 卡牌效果描述是否无歧义，能否明确理解其机制
 - 效果中的数值是否都能对应到 CSV 中的 伤害/强伤/防御/强防/魔法/强魔 列
 - 升级效果是否明确（为空则按 强X 列自动推导）
+- **「连携：XXX」语义**：描述中的「连携：XXX」是**触发条件**（XXX 发生时自动打出此牌），不是打出此牌获得的收益。例：「连携：获得格挡」= 玩家获得格挡时自动打出；「连携：连续打出2张攻击牌」= 连续打出2张攻击牌后自动打出。检查时不得把连携文本误判为缺失的数值或效果
 
 **第三轮：中英文命名一致性**
 
 - `ID` 列的英文命名即为代码中的类名依据（Title Case 转 PascalCase，如 `Charged Beat` → `ChargedBeat`）
+- **ID 中的符号与空格在实现时一律去掉**：类名 = 去符号去空格后词首大写拼接（如 `Soul Hunter - Punishment` → `SoulHunterPunishment`）；本地化 key 由 `csv_to_cards.py` 按 RitsuLib 规则生成（如 `SOUL_HUNTER_PUNISHMENT`），与游戏实际查找一致。表格检查时**忽略**此类符号问题
 - `名称` 列的中文即为本地化 `.title` 值
 - **代码中所有英文命名必须严格按照 `ID` 列给定的翻译**，不得使用拼音或自行翻译
 - 检查 ID 与名称的对应关系是否合理（音译/意译一致性）
@@ -273,6 +275,12 @@ public sealed class YourDecibelCard() : ZZZBaseCard(2, CardType.Attack, CardRari
 
 连携效果：在手牌中满足特定条件时，自动从手牌打出（不消耗费用）。
 
+> **语义澄清（重要）**：Cards.csv 卡牌效果中的「连携：XXX」是**触发条件**，不是打出此牌获得的收益——
+> 「连携：获得格挡」表示"当玩家获得格挡时自动打出此牌"，此牌本身并不获得格挡；
+> 「连携：连续打出2张攻击牌」表示"连续打出2张攻击牌后自动打出此牌"。
+> 实现时把「连携：XXX」翻译为 `CheckChainCondition` 的判定逻辑，**不得**在 `OnPlay` 中给 `IsAutoPlay` 追加 XXX 收益。
+> 参考修正后的实现：`VFormScorchingSun`（连携条件=玩家获得格挡，本身无格挡收益）、`SpectralFlash`（连携条件=上一张牌对自身施加 Buff，本身无增益收益）。
+
 ```csharp
 using MegaCrit.Sts2.Core.Combat;
 using STS2RitsuLib.Keywords;
@@ -284,8 +292,9 @@ public sealed class YourChainCard() : ZZZBaseCard(1, CardType.Attack, CardRarity
     IChainCardSource
 {
     /// <summary>连携条件：连续打出2张攻击牌。</summary>
-    public bool CheckChainCondition(CardModel card, CardModel lastPlayed)
+    public bool CheckChainCondition(CardModel card, ChainContext context)
     {
+        var lastPlayed = context.LastPlayed;
         if (lastPlayed.Type != CardType.Attack) return false;
 
         var combatState = card.CombatState;
@@ -330,8 +339,9 @@ public sealed class YourChainCard() : ZZZBaseCard(1, CardType.Attack, CardRarity
 
 **要点：**
 
-- 实现 `IChainCardSource` 接口，编写 `CheckChainCondition` 方法定义触发条件
-- `CheckChainCondition` 中访问 `CombatManager.Instance` 和 `History` 前**必须做空检查**
+- 实现 `IChainCardSource` 接口，编写 `CheckChainCondition(CardModel card, ChainContext context)` 方法定义触发条件
+- `ChainContext` 提供出牌前后的精确数据：`LastPlayed`（上一张牌）、`LastTarget`（目标）、`DebuffApplied`（是否施加了新 Debuff）
+- 需要查询出牌历史时，访问 `CombatManager.Instance` 和 `History` 前**必须做空检查**
 - 关键词悬浮提示使用 `ModKeywordRegistry.GetDescription/GetTitle` 构造（`HoverTipFactory.FromKeyword` 仅支持游戏内建 `CardKeyword` 枚举）
 - `OwnKeywordIds` 声明 `ZZZModKeywords.Chain`
 - **手牌高亮自动生效**：`ChainSystem.Init()` 会扫描程序集，所有实现 `IChainCardSource` 的卡牌在条件满足时自动发金光，无需额外注册

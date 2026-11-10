@@ -25,7 +25,13 @@ public sealed class DazeDamageModifier : HookedSingletonModel
         if (target == null || !DazeSystem.IsDazed(target))
             return 1m;
 
+        // 「流失生命」等非伤害管线扣血（Unpowered）不受伤害加成影响
+        if (props.HasFlag(ValueProp.Unpowered))
+            return 1m;
+
         // 基础 1.5x，有失衡易伤 Power 时提升为 2.0x
-        return target.HasPower<DazeVulnerablePower>() ? 2.0m : 1.5m;
+        return target.HasPower<DazeVulnerablePower>() 
+            ? DazeSystem.DazeVulnerableDamageMultiplier 
+            : DazeSystem.DazeDamageMultiplier;
     }
 }

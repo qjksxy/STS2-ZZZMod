@@ -42,10 +42,10 @@ public sealed class FinalCurtain() : ZZZBaseCard(
     {
         if (!EnsureTarget(cardPlay, out var target)) return;
 
-        // 计算目标身上的负面效果层数（所有 Debuff 类型的 Power）
+        // 计算目标身上的负面效果层数（所有 Debuff 类型的 Power 的层数合计）
         int debuffCount = target.Powers
             .Where(p => p.Type == PowerType.Debuff)
-            .Sum(p => Math.Max(p.Amount, 1));
+            .Sum(p => p.Amount);
         debuffCount = Math.Min(debuffCount, 10);
 
         // 基础伤害：每层负面状态造成5点伤害

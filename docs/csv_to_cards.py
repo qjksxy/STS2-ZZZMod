@@ -16,15 +16,35 @@ from pathlib import Path
 
 
 def id_to_snake(name: str) -> str:
-    """将 Title Case 英文 ID 转为 UPPER_SNAKE_CASE。
+    """将 ID 转为本地化 key 的 UPPER_SNAKE_CASE。
+
+    与实现约定和游戏实际查找规则完全一致：
+    1) 按空格拆词 → 去掉每个词内的非字母数字符号（如 "Bird's" -> "Birds"、
+       "V-Form" -> "VForm"）→ 词首字母大写 → 拼接 → 得到类名形式
+       （如 "Eight Sounds of Ganzhou" -> "EightSoundsOfGanzhou"）；
+    2) 再按 RitsuLib `ModContentRegistry.NormalizePublicStem` 规范化：
+       拆分缩写词/驼峰边界、合并连续下划线、转大写。
+       生成的 key 即游戏 `cards` 表实际查找的 `Id.Entry`。
 
     示例:
-        "Enchanted Moonlit Blossoms" -> "ENCHANTED_MOONLIT_BLOSSOMS"
-        "Eight Sounds of Ganzhou"    -> "EIGHT_SOUNDS_OF_GANZHOU"
+        "Enchanted Moonlit Blossoms"      -> "ENCHANTED_MOONLIT_BLOSSOMS"
+        "Eight Sounds of Ganzhou"         -> "EIGHT_SOUNDS_OF_GANZHOU"
+        "Soul Hunter - Punishment"        -> "SOUL_HUNTER_PUNISHMENT"
+        "L-Form Thundering Fist"          -> "L_FORM_THUNDERING_FIST"
+        "Soaring Bird's Song"             -> "SOARING_BIRDS_SONG"
     """
-    # 去除首尾空格，按空格拆分，转大写，用下划线连接
-    words = name.strip().split()
-    return "_".join(w.upper() for w in words if w)
+    # 1) 按空白拆词 → 词内去符号 → 词首字母大写 → 拼接（即类名形式）
+    words = []
+    for token in name.split():
+        cleaned = re.sub(r"[^A-Za-z0-9]", "", token)
+        if cleaned:
+            words.append(cleaned[:1].upper() + cleaned[1:])
+    class_name = "".join(words)
+    # 2) RitsuLib NormalizePublicStem 规范化
+    normalized = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", class_name)   # 缩写词边界 (ZZZStrike → ZZZ_Strike)
+    normalized = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", normalized)       # 驼峰边界 (SoaringBirdsSong → Soaring_Birds_Song)
+    normalized = re.sub(r"_+", "_", normalized)                           # 合并连续下划线
+    return normalized.strip("_").upper()
 
 
 def main():

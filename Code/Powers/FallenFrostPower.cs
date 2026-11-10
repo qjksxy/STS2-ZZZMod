@@ -14,7 +14,7 @@ namespace ZZZMod.Code.Powers;
 /// <summary>
 ///     落霜 —— 由「飞雪」和「名残雪」施加。
 ///     纯计数能力：累积到6层时消耗6层，将一张「霜月」加入手牌。
-///     技能牌+1层、施加负面+2层的被动由 LingeringSnowPower 实现。
+///     消耗至0后 Power 会被游戏自动移除，由 LingeringSnowPower 负责在需要时重建。
 /// </summary>
 [RegisterPower]
 public sealed class FallenFrostPower : ModPowerTemplate

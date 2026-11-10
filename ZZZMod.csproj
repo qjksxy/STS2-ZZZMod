@@ -43,10 +43,15 @@
     <Copy SourceFiles="$(MSBuildProjectName).json" DestinationFolder="$(Sts2Dir)/mods/$(MSBuildProjectName)/" />
   </Target>
 
-  <Target Name="ExportPck">
+  <!-- 部署：编译 → 复制 DLL/JSON → 导出 PCK。
+       三者都是硬失败：文件被占用（游戏还在跑）就让整个部署失败并报出原因，
+       不再出现「构建成功但 mods 里还是旧 DLL / 旧 PCK」的静默失败。 -->
+  <Target Name="ExportPck" DependsOnTargets="Build">
     <Message Text="Copying PCK to Slay the Spire 2 mods folder..." Importance="high" />
+    <MakeDir Directories="$(Sts2Dir)\mods\$(MSBuildProjectName)\" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(Sts2Dir)\mods\$(MSBuildProjectName)\" />
+    <Copy SourceFiles="$(MSBuildProjectName).json" DestinationFolder="$(Sts2Dir)/mods/$(MSBuildProjectName)/" />
     <Exec Command="&quot;$(GodotExe)&quot; --headless --export-pack &quot;Windows Desktop&quot; &quot;$(Sts2Dir)/mods/$(MSBuildProjectName)/$(MSBuildProjectName).pck&quot;"
-      EnvironmentVariables="IsInnerGodotExport=true;MSBUILDDISABLENODEREUSE=1"
-      ContinueOnError="WarnAndContinue" />
+      EnvironmentVariables="IsInnerGodotExport=true;MSBUILDDISABLENODEREUSE=1" />
   </Target>
 </Project>

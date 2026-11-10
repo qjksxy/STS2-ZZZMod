@@ -21,8 +21,9 @@ public sealed class PleaseDoNotResist() : ZZZBaseCard(
     2, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy, true
 ), IChainCardSource
 {
-    public bool CheckChainCondition(CardModel card, CardModel lastPlayed)
+    public bool CheckChainCondition(CardModel card, ChainContext context)
     {
+        var lastPlayed = context.LastPlayed;
         if (lastPlayed.Type != CardType.Attack) return false;
         var combatState = card.CombatState;
         if (combatState == null) return false;

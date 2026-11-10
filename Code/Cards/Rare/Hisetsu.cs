@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.ValueProps;
 using STS2RitsuLib.Interop.AutoRegistration;
+using ZZZMod.Code.Cards.Basic;
 using ZZZMod.Code.Pools;
 using ZZZMod.Code.Powers;
 
@@ -19,12 +20,13 @@ namespace ZZZMod.Code.Cards.Rare;
 public sealed class Hisetsu() : ZZZBaseCard(1, CardType.Attack, CardRarity.Rare, TargetType.AnyEnemy, true)
 {
     protected override IEnumerable<DynamicVar> CanonicalVars => [
-        new DamageVar(8, ValueProp.Move),
+        new DamageVar(12, ValueProp.Move),
         new DynamicVar("Magic", 2m)
     ];
 
     protected override IEnumerable<IHoverTip> OwnAdditionalHoverTips => [
-        HoverTipFactory.FromPower<FallenFrostPower>()
+        HoverTipFactory.FromPower<FallenFrostPower>(),
+        HoverTipFactory.FromCard<Shimotsuki>()
     ];
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -44,7 +46,7 @@ public sealed class Hisetsu() : ZZZBaseCard(1, CardType.Attack, CardRarity.Rare,
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(2);
+        DynamicVars.Damage.UpgradeValueBy(6);   // 强伤列
         DynamicVars["Magic"].UpgradeValueBy(1m);
     }
 }

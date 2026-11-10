@@ -27,6 +27,13 @@
 | [daze_system.md](daze_system.md) | 失衡系统机制与结构 |
 | [decibel_cards_design.md](decibel_cards_design.md) | 喧响卡牌设计稿 |
 | [chain_system.md](chain_system.md) | 连携系统机制与结构 |
+| [enemy_debuff_design.md](enemy_debuff_design.md) | 敌人负面效果（Debuff）设计稿 v1：9 个机制型 debuff、与原版对比、实现顺序 |
+
+## 🎨 素材流水线
+
+| 文档 | 说明 |
+|------|------|
+| [asset_replacement_todo.md](asset_replacement_todo.md) | **★ 角色素材更换登记表**：占位/基础素材逐项更换清单（场景、头像、能量图标、地图标记等）与流程 |
 
 > **约定**：设计稿仅为前期参考，不作为实现方案；实现一律以 `Cards.csv` 为准。
 > `Cards.csv` 的「对应角色」列仅供卡图绘制参考，开发时忽略；玩家角色始终是法厄同（Phaethon）。

@@ -1,3 +1,4 @@
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using STS2RitsuLib.Utils;
 
 namespace ZZZMod.Code.Daze;
@@ -15,6 +16,9 @@ namespace ZZZMod.Code.Daze;
 /// </summary>
 public sealed class DazeState
 {
+    /// <summary>所属怪物（由 DazeStore.Get 注入），用于失衡累积事件上报。</summary>
+    internal Creature? Owner { get; set; }
+
     public int CurrentValue { get; set; }
     public int MaxValue { get; set; }
     public bool PendingDaze { get; set; }
@@ -32,7 +36,10 @@ public sealed class DazeState
     public bool AddDaze(int amount)
     {
         if (amount <= 0 || IsFull || PendingDaze || IsDazed) return false;
-        CurrentValue = Math.Min(CurrentValue + amount, MaxValue);
+        int gained = Math.Min(amount, MaxValue - CurrentValue);
+        CurrentValue += gained;
+        if (gained > 0)
+            DazeStore.RaiseDazeAdded(Owner, gained);
         if (IsFull)
         {
             PendingDaze = true;
@@ -76,18 +83,31 @@ public enum DazeTurnAction
 /// </summary>
 public static class DazeStore
 {
-    private static readonly AttachedState<MegaCrit.Sts2.Core.Entities.Creatures.Creature, DazeState> States =
+    private static readonly AttachedState<Creature, DazeState> States =
         new(() => new());
 
-    public static DazeState Get(MegaCrit.Sts2.Core.Entities.Creatures.Creature creature)
+    /// <summary>
+    ///     失衡值累积事件（获得失衡的怪物，实际累积点数）。
+    ///     供能力监听（如「爬行恐惧」：每造成1点失衡获得格挡）。
+    /// </summary>
+    public static event Action<Creature, int>? DazeAdded;
+
+    internal static void RaiseDazeAdded(Creature? creature, int amount)
+    {
+        if (creature == null || amount <= 0) return;
+        DazeAdded?.Invoke(creature, amount);
+    }
+
+    public static DazeState Get(Creature creature)
     {
         var state = States.GetOrCreate(creature);
+        state.Owner ??= creature;
         if (state.MaxValue <= 0)
             state.MaxValue = DazeSystem.CalcMaxDaze(creature);
         return state;
     }
 
-    public static bool TryGet(MegaCrit.Sts2.Core.Entities.Creatures.Creature creature, out DazeState state) =>
+    public static bool TryGet(Creature creature, out DazeState state) =>
         States.TryGetValue(creature, out state!);
 
     public static void ClearAll() => States.Clear();

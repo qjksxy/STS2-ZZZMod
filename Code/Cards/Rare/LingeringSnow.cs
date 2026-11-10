@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
 using STS2RitsuLib.Interop.AutoRegistration;
+using ZZZMod.Code.Cards.Basic;
 using ZZZMod.Code.Pools;
 using ZZZMod.Code.Powers;
 
@@ -19,7 +20,7 @@ public sealed class LingeringSnow() : ZZZBaseCard(2, CardType.Power, CardRarity.
 {
     protected override IEnumerable<IHoverTip> OwnAdditionalHoverTips => [
         HoverTipFactory.FromPower<FallenFrostPower>(),
-        HoverTipFactory.FromPower<LingeringSnowPower>()
+        HoverTipFactory.FromCard<Shimotsuki>()
     ];
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

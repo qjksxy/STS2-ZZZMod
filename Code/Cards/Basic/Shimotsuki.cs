@@ -24,7 +24,7 @@ public sealed class Shimotsuki() : ZZZBaseCard(0, CardType.Attack, CardRarity.Ba
     ];
 
     protected override IEnumerable<DynamicVar> CanonicalVars => [
-        new DamageVar(6, ValueProp.Move)
+        new DamageVar(12, ValueProp.Move)
     ];
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -41,6 +41,6 @@ public sealed class Shimotsuki() : ZZZBaseCard(0, CardType.Attack, CardRarity.Ba
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(3);
+        DynamicVars.Damage.UpgradeValueBy(4);   // 强伤列
     }
 }

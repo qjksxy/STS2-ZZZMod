@@ -22,7 +22,7 @@ public sealed class EndlessWinter() : ZZZBaseCard(2, CardType.Attack, CardRarity
 
     protected override IEnumerable<DynamicVar> CanonicalVars => [
         new DamageVar(6, ValueProp.Move),
-        new DynamicVar("Magic", 12m)
+        new DynamicVar("Magic", 14m)   // 魔法列
     ];
 
     protected override IEnumerable<IHoverTip> OwnAdditionalHoverTips => [

@@ -15,6 +15,16 @@ namespace ZZZMod.Code.Decibel;
 /// </summary>
 public static class DecibelSystem
 {
+    // ── 配置常量 ──
+    /// <summary>击杀敌人获得的喧响值</summary>
+    internal const int DecibelPerKill = 5;
+
+    /// <summary>不同稀有度卡牌打出时获得的喧响值</summary>
+    internal const int DecibelPerBasicCard = 1;
+    internal const int DecibelPerCommonCard = 2;
+    internal const int DecibelPerUncommonCard = 3;
+    internal const int DecibelPerRareCard = 4;
+
     internal static DecibelData Current { get; private set; } = new();
 
     private static RunSavedData<DecibelSaveData>? _savedSlot;
@@ -85,11 +95,11 @@ public static class DecibelSystem
         var rarity = card.Rarity;
         var amount = rarity switch
         {
-            CardRarity.Basic => 1,
-            CardRarity.Common => 2,
-            CardRarity.Uncommon => 3,
-            CardRarity.Rare => 4,
-            _ => 1,
+            CardRarity.Basic => DecibelPerBasicCard,
+            CardRarity.Common => DecibelPerCommonCard,
+            CardRarity.Uncommon => DecibelPerUncommonCard,
+            CardRarity.Rare => DecibelPerRareCard,
+            _ => DecibelPerBasicCard,
         };
 
         GainDecibel(amount);
@@ -99,7 +109,7 @@ public static class DecibelSystem
     {
         var creature = evt.Creature;
         if (creature == null || creature.Side != CombatSide.Enemy) return;
-        GainDecibel(5);
+        GainDecibel(DecibelPerKill);
     }
 
     public static void GainDecibel(int amount)
